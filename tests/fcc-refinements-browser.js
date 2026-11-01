@@ -18,7 +18,7 @@ async(page)=>{
   assert(await page.locator('#fcc-palette').isHidden(),'single void hides atom palette');
   assert(await page.locator('#toggle-clipping').isHidden(),'single void hides clipping toggle');
   const voidCenter=await page.evaluate(()=>__fccArgs.controls.target.toArray());assert(voidCenter.every(v=>Math.abs(v-1.5)<1e-9),'single void rotates around the base cell even when normal grid is eight cells');
-  await click('#fcc-mode button[data-value="compare"]');assert(await page.locator('#grid-mode-group').isVisible(),'comparison shows left-model grid actions');assert(await page.locator('#toggle-clipping').isHidden(),'comparison hides clipping toggle');
+  await click('#fcc-mode button[data-value="compare"]');assert(await page.locator('#grid-mode-group').isHidden(),'comparison hides saved normal-grid actions');assert(await page.locator('#toggle-clipping').isHidden(),'comparison hides clipping toggle');
   await click('#fcc-mode button[data-value="normal"]');assert(await page.locator('#grid-mode-group button[data-mode="2"]').evaluate(e=>e.classList.contains('active')),'normal grid preference survives void mode');
   const colors=await page.evaluate(()=>[...new Set(__fccScenes.normal.children.find(o=>o.isGroup).children.map(o=>o.children[0].material.color.getHexString()))].sort());assert(JSON.stringify(colors)===JSON.stringify(['8dbddc','f29aa8']),'FCC palette uses darker legacy pink and pale blue');
   return {checks:checks.length,results:checks};

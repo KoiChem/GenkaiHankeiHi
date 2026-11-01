@@ -145,6 +145,10 @@
     <div id="fcc-controls" hidden>
         <div class="btn-group" id="fcc-mode"><button data-value="normal" class="active">通常</button><button data-value="void">間隙</button><button data-value="compare">比較表示</button></div>
         <div id="fcc-atom-controls">
+            <div id="fcc-palette-controls">
+                <div class="label-text">色分け</div>
+                <div class="btn-group" id="fcc-palette"><button data-value="sites" class="active">頂点・面心</button><button data-value="abc">ABC層</button></div>
+            </div>
             <div id="fcc-grid-row" class="control-grid">
         <div class="mini-btn-group" id="grid-mode-group">
             <button data-mode="0" class="active" title="単位格子">
@@ -180,10 +184,6 @@
             </button>
         </div>
         <button id="toggle-clipping" class="toggle-btn active" data-prop="isClipping">格子切り出し</button>
-            </div>
-            <div id="fcc-palette-controls">
-                <div class="label-text">色分け</div>
-                <div class="btn-group" id="fcc-palette"><button data-value="sites" class="active">頂点・面心</button><button data-value="abc">ABC層</button></div>
             </div>
             <div class="label-text">不透明度</div>
             <div class="opacity-row"><label class="opacity-label" for="fcc-atom-opacity">原子 <output id="fcc-atom-value">85%</output></label><input id="fcc-atom-opacity" aria-label="原子の不透明度" type="range" min="0" max="1" step="0.01" value="0.85"></div>

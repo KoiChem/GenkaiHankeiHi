@@ -5,7 +5,8 @@ async (page) => {
     const click=async s=>{await page.locator(s).click();await page.waitForTimeout(100);};
     const panel=async show=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await page.locator('#toggle-panel-btn').click();await page.waitForTimeout(450);}};
     const fits=()=>page.evaluate(()=>{
-        const dims=STATE.gridMode===2?[2,2,2]:STATE.gridMode===1?[2,1,2]:[1,1,1];
+        const mode=document.querySelector('#fcc-mode button.active').dataset.value,grid=mode==='normal'?STATE.gridMode:0;
+        const dims=grid===2?[2,2,2]:grid===1?[2,1,2]:[1,1,1];
         const camera=__fccCameras.normal||__fccCameras.void;
         const result=[];for(const x of [0,dims[0]*3])for(const y of [0,dims[1]*3])for(const z of [0,dims[2]*3]){const p=new THREE.Vector3(x,y,z).project(camera);result.push(Math.abs(p.x)<=1.001&&Math.abs(p.y)<=1.001);}return result.every(Boolean);
     });
@@ -18,8 +19,8 @@ async (page) => {
     const before=await page.evaluate(()=>__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target));
     await click('#grid-mode-group button[data-mode="0"]');await click('#grid-mode-group button[data-mode="2"]');
     const after=await page.evaluate(()=>__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target));assert(Math.abs(before-after)<1e-8,'grid round trip preserves the user zoom ratio');
-    await click('#fcc-mode button[data-value="compare"]');await page.setViewportSize({width:390,height:844});await page.waitForTimeout(500);assert(await fits(),'resizing 8-cell comparison to portrait keeps corners within both panes');
-    await page.setViewportSize({width:1280,height:720});await page.waitForTimeout(500);await click('#grid-mode-group button[data-mode="0"]');
+    await click('#fcc-mode button[data-value="compare"]');await page.setViewportSize({width:390,height:844});await page.waitForTimeout(500);assert(await fits(),'resizing comparison with a saved eight-cell preference fits its base-cell corners');
+    await page.setViewportSize({width:1280,height:720});await page.waitForTimeout(500);await click('#fcc-mode button[data-value="normal"]');await click('#grid-mode-group button[data-mode="0"]');await click('#fcc-mode button[data-value="compare"]');
     for(let i=0;i<2;i++){await click('#toggle-quality');await page.waitForFunction(()=>document.querySelector('#fcc-loading').hidden);}
     const memory=[];
     for(let i=0;i<3;i++){await click('#toggle-quality');await page.waitForFunction(()=>document.querySelector('#fcc-loading').hidden);await page.waitForTimeout(100);memory.push(await page.evaluate(()=>__fccArgs.renderer.info.memory.geometries));}

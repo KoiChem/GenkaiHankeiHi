@@ -11,7 +11,7 @@ async(page)=>{
     const sameTarget=rotated.target.every((v,i)=>Math.abs(v-before.center[i])<1e-8),sameScreen=rotated.screen.every((v,i)=>Math.abs(v-panned.screen[i])<1e-7);
     assert(sameTarget&&sameScreen&&Math.abs(panned.offset[0]+60)<1e-8,projection+' grid'+grid+' '+mode+': pan→rotate keeps geometric pivot and screen center');
     if(mode==='compare')assert(await page.evaluate(()=>__fccCameras.normal.projectionMatrix.equals(__fccCameras.void.projectionMatrix)),'comparison pan stays synchronized '+projection+' grid'+grid);
-    const point=await page.evaluate(({mode,grid})=>{const side=mode==='void'?'void':'normal',camera=__fccCameras[side],dims=grid===2?[2,2,2]:grid===1?[2,1,2]:[1,1,1],p=mode==='void'?[1.5,1.5,1.5]:[dims[0]*3,1.5,1.5],v=new THREE.Vector3(...p).project(camera),width=mode==='compare'?innerWidth/2:innerWidth;return{x:(v.x+1)*width/2,y:(1-v.y)*innerHeight/2};},{mode,grid});
+    const point=await page.evaluate(({mode,grid})=>{const side=mode==='void'?'void':'normal',camera=__fccCameras[side],effective=mode==='normal'?grid:0,dims=effective===2?[2,2,2]:effective===1?[2,1,2]:[1,1,1],p=mode==='void'?[1.5,1.5,1.5]:[dims[0]*3,1.5,1.5],v=new THREE.Vector3(...p).project(camera),width=mode==='compare'?innerWidth/2:innerWidth;return{x:(v.x+1)*width/2,y:(1-v.y)*innerHeight/2};},{mode,grid});
     if(mode!=='void'){
       const count=()=>page.evaluate(()=>__fccScenes.normal.children.find(o=>o.isGroup).children.filter(o=>!o.visible).length);
       const old=await count();await page.mouse.click(point.x,point.y,{clickCount:2,delay:60});await page.waitForTimeout(350);assert(await count()===old+1,'picking follows panned '+projection+' grid'+grid+' '+mode);await panel(true);await click('#fcc-restore');await panel(false);

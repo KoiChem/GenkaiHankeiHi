@@ -16,7 +16,8 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     const clips = [new THREE.Plane(new THREE.Vector3(1,0,0),0),new THREE.Plane(new THREE.Vector3(-1,0,0),a),new THREE.Plane(new THREE.Vector3(0,1,0),0),new THREE.Plane(new THREE.Vector3(0,-1,0),a),new THREE.Plane(new THREE.Vector3(0,0,1),0),new THREE.Plane(new THREE.Vector3(0,0,-1),a)];
     const vec=p=>new THREE.Vector3(...p).multiplyScalar(a);
     const color=s=>s.kind==='oct'?0x8acb35:0x9a55d6;
-    const voidColor=s=>s.kind==='oct'?0xb9dfad:0xd5bce8;
+    const voidColor=s=>s.kind==='oct'?0xaad497:0xc7a5de;
+    const atomGrid=()=>state.mode==='normal'?shared.gridMode:0;
     const atomClipping=()=>state.mode==='compare'||shared.isClipping;
     const enabled=()=>shared.type==='FCC';
     const quality=()=>shared.isLowQuality?16:32;
@@ -31,10 +32,10 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     }
     function rebuildFrames() {
         for(const {scene,lines}of frameRoots){scene.remove(lines);lines.geometry.dispose();lines.material.dispose();}frameRoots.length=0;
-        const dims=shared.gridMode===2?[2,2,2]:shared.gridMode===1?[2,1,2]:[1,1,1];
+        const grid=atomGrid(),dims=grid===2?[2,2,2]:grid===1?[2,1,2]:[1,1,1];
         const size=dims.map(v=>v*a),center=new THREE.Vector3(...size).multiplyScalar(.5);
         frame(size,center,.3,scenes.normal);frame([a,a,a],new THREE.Vector3(a/2,a/2,a/2),.55,scenes.void);
-        if(shared.gridMode>0)frame([a,a,a],new THREE.Vector3(a/2,a/2,a/2),.65,scenes.normal);
+        if(atomGrid()>0)frame([a,a,a],new THREE.Vector3(a/2,a/2,a/2),.65,scenes.normal);
     }
     function caps(group,p,r,material,planes) {
         const center=vec(p),radius=r*a;
@@ -48,10 +49,10 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     }
     function rebuildAtoms() {
         clear(atomRoot);atomObjects.length=0;atomMaterials.length=0;
-        const dims=shared.gridMode===2?[2,2,2]:shared.gridMode===1?[2,1,2]:[1,1,1];
+        const grid=atomGrid(),dims=grid===2?[2,2,2]:grid===1?[2,1,2]:[1,1,1];
         const planes=atomClipping()?clips.map((p,i)=>{const q=p.clone();if(i%2)q.constant=dims[(i-1)/2]*a;return q;}):[];
         // Independent geometries allow the simple legacy disposal routine to coexist safely.
-        for(const site of G.atoms(shared.gridMode)){
+        for(const site of G.atoms(atomGrid())){
             const group=new THREE.Group();group.userData.site=site;atomRoot.add(group);
             const mat=new THREE.MeshPhongMaterial({transparent:true,opacity:state.atom,shininess:45,clippingPlanes:planes,depthWrite:state.atom>=1});
             const mesh=new THREE.Mesh(new THREE.SphereGeometry(G.R*a,quality()*2,quality()),mat);mesh.position.copy(vec(site.p));group.add(mesh);
@@ -90,7 +91,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
                 const mesh=new THREE.Mesh(data[key],surfaceMat.clone());mesh.scale.setScalar(a);mesh.position.copy(vec(site.p));mesh.userData.site=site;group.add(mesh);parts.push({key,mesh});
             }
             surfaceMat.dispose();
-            const ballMat=new THREE.MeshPhongMaterial({color:color(site),transparent:true,opacity:state.sphere,shininess:65,clippingPlanes:clips,depthWrite:state.sphere>=1});
+            const ballMat=new THREE.MeshPhongMaterial({color:color(site),side:THREE.DoubleSide,transparent:true,opacity:state.sphere,shininess:65,clippingPlanes:clips,depthWrite:state.sphere>=1});
             const balls=new THREE.Group();group.add(balls);
             const ball=new THREE.Mesh(sphereGeometry(),ballMat);ball.position.copy(vec(site.p));ball.scale.setScalar(site.radius*a);ball.userData.site=site;balls.add(ball);
             caps(balls,site.p,site.radius,ballMat,clips);
@@ -127,8 +128,9 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         }
         document.getElementById('fcc-controls').classList.toggle('comparing',state.mode==='compare');
         document.getElementById('fcc-atom-controls').hidden=state.mode==='void';
-        document.getElementById('fcc-palette-controls').hidden=state.mode==='void';
-        grid.hidden=isFCC&&state.mode==='void';
+        document.getElementById('fcc-palette-controls').hidden=state.mode!=='normal';
+        document.getElementById('fcc-grid-row').hidden=state.mode!=='normal';
+        grid.hidden=isFCC&&state.mode!=='normal';
         clip.hidden=isFCC&&state.mode!=='normal';
         document.getElementById('fcc-void-controls').hidden=!showVoid;
         document.getElementById('fcc-void-opacity-row').hidden=!showVoid||state.display==='sphere';
@@ -140,10 +142,10 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     }
     function update() {
         active=true;syncUI();
-        const key=[shared.gridMode,quality(),atomClipping()].join(':');
+        const key=[atomGrid(),quality(),atomClipping()].join(':');
         if(key!==atomBuild){atomBuild=key;rebuildAtoms();}
         for(const {material,site}of atomMaterials){
-            material.color.setHex(state.palette==='abc'?[0x8dbddc,0xf29aa8,0xf2a522][site.layer]:(site.vertex?0xf29aa8:0x8dbddc));
+            material.color.setHex(state.mode!=='compare'&&state.palette==='abc'?[0x8dbddc,0xf29aa8,0xf2a522][site.layer]:(site.vertex?0xf29aa8:0x8dbddc));
             material.opacity=state.atom;material.depthWrite=state.atom>=1;
         }
         atomObjects.forEach(o=>o.visible=!state.hidden.has(o.userData.site.id)&&state.atom>0);
@@ -157,7 +159,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
             o.balls.visible=state.display!=='void'&&state.sphere>0;o.balls.traverse(m=>{if(m.material){m.material.opacity=state.sphere;m.material.depthWrite=state.sphere>=1;}});
         }
         guide();
-        const mode=state.mode==='void'?0:shared.gridMode;
+        const mode=atomGrid();
         const dims=mode===2?[2,2,2]:mode===1?[2,1,2]:[1,1,1];
         const center=new THREE.Vector3(...dims).multiplyScalar(a/2),shift=center.clone().sub(shared.currentCenter);
         const span=(mode>0?2:1)+(state.mode==='normal'&&!shared.isClipping?2*G.R:0),ratio=lastSpan===null?1:span/lastSpan;
@@ -175,7 +177,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     }
     function reset() {
         shared.viewOffsetX=0;shared.viewOffsetY=0;
-        const camera=getCamera(),span=(state.mode!=='void'&&shared.gridMode>0?2:1)+(state.mode==='normal'&&!shared.isClipping?2*G.R:0);
+        const camera=getCamera(),span=(atomGrid()>0?2:1)+(state.mode==='normal'&&!shared.isClipping?2*G.R:0);
         const dist=a*span*2.8;
         const center=shared.currentCenter.clone();
         controls.target.copy(center);camera.up.set(0,1,0);camera.position.copy(center).add(new THREE.Vector3(1.3,1,1.6).normalize().multiplyScalar(dist));
@@ -214,8 +216,8 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
             const hits=[];
             // Analytic ray/sphere + clipping interval keeps hidden sites pickable,
             // including their cut faces. Display meshes are never hit targets.
-            const dims=shared.gridMode===2?[2,2,2]:shared.gridMode===1?[2,1,2]:[1,1,1];
-            for(const site of G.atoms(shared.gridMode)){
+            const grid=atomGrid(),dims=grid===2?[2,2,2]:grid===1?[2,1,2]:[1,1,1];
+            for(const site of G.atoms(atomGrid())){
                 const oc=ray.ray.origin.clone().sub(vec(site.p)),b=oc.dot(ray.ray.direction),c=oc.lengthSq()-(G.R*a)**2,d=b*b-c;
                 if(d<0)continue;
                 let lo=Math.max(0,-b-Math.sqrt(d)),hi=-b+Math.sqrt(d);
