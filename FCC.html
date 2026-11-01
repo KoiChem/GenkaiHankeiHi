@@ -102,7 +102,7 @@
         @media (max-height: 540px) { #ui-panel { top: 66px; bottom: auto; max-height: calc(100dvh - 100px); padding: 12px; width: 290px; left: auto; right: 12px; transform: none; } #ui-panel.hidden { transform: translateX(350px); } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
     <script src="fcc-geometry.js"></script>
     <script src="fcc-view.js"></script>
 </head>
@@ -337,13 +337,16 @@
         let pointerDownPos = new THREE.Vector2();
         let currentPlanes = [];
         let clickTimer = null;
+        const modelTouchIds = new Set();
+        let suppressModelTouches = false, modelMouseDown = false;
 
         let isAnimatingCamera = false;
         let cameraAnimProgress = 0;
         let startCamPos = new THREE.Vector3(), endCamPos = new THREE.Vector3();
         let startTarget = new THREE.Vector3(), endTarget = new THREE.Vector3();
-        let startUp = new THREE.Vector3(), endUp = new THREE.Vector3(0, 1, 0);
+        const endUp = new THREE.Vector3(0, 1, 0);
         let startZoom = 1, endZoom = 1;
+        const startCamQuaternion = new THREE.Quaternion(), endCamQuaternion = new THREE.Quaternion();
 
         const DOM = {
             panel: document.getElementById('ui-panel'),
@@ -396,9 +399,53 @@
             renderer.localClippingEnabled = true;
             document.body.appendChild(renderer.domElement);
 
-            controls = new THREE.OrbitControls(activeCamera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.enablePan = false;
+            controls = new THREE.TrackballControls(activeCamera, renderer.domElement);
+            controls.noPan = true;
+            controls.staticMoving = true;
+            controls.rotateSpeed = 3;
+            controls.keys = [];
+            // r128 Trackball uses the reciprocal orthographic pinch factor.
+            // Correct only its touch-pinch path; native wheel zoom stays intact.
+            const nativeZoomCamera = controls.zoomCamera;
+            controls.zoomCamera = () => {
+                const camera = controls.object, beforeZoom = camera.zoom;
+                nativeZoomCamera.call(controls);
+                if (!suppressModelTouches && modelTouchIds.size > 1 && camera.isOrthographicCamera) {
+                    camera.zoom = beforeZoom * beforeZoom / camera.zoom;
+                    camera.updateProjectionMatrix();
+                }
+            };
+            const canvas = renderer.domElement;
+            const blockTouch = e => { e.preventDefault(); e.stopImmediatePropagation(); };
+            canvas.addEventListener('touchstart', e => {
+                const liveIds = new Set(Array.from(e.touches, touch => touch.identifier));
+                for (const id of modelTouchIds) if (!liveIds.has(id)) modelTouchIds.delete(id);
+                if (!modelTouchIds.size) suppressModelTouches = false;
+                for (const touch of Array.from(e.changedTouches)) modelTouchIds.add(touch.identifier);
+                if (!controls.enabled) suppressModelTouches = true;
+                if (suppressModelTouches) blockTouch(e);
+            }, { capture: true, passive: false });
+            canvas.addEventListener('touchmove', e => {
+                if (suppressModelTouches) blockTouch(e);
+            }, { capture: true, passive: false });
+            const finishTouch = e => {
+                const suppressed = suppressModelTouches;
+                for (const touch of Array.from(e.changedTouches)) modelTouchIds.delete(touch.identifier);
+                if (!modelTouchIds.size) suppressModelTouches = false;
+                if (suppressed && e.target === canvas) blockTouch(e);
+            };
+            document.addEventListener('touchend', finishTouch, { capture: true, passive: false });
+            document.addEventListener('touchcancel', finishTouch, { capture: true, passive: false });
+            canvas.addEventListener('pointerdown', e => {
+                if (!controls.enabled) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+                if (e.pointerType === 'mouse' || e.pointerType === 'pen') modelMouseDown = true;
+            }, true);
+            document.addEventListener('pointermove', e => {
+                if (modelMouseDown && e.pointerType !== 'touch' && e.buttons === 0) stopCameraMotion();
+            }, true);
+            window.addEventListener('pointerup', e => {
+                if (e.pointerType !== 'touch') modelMouseDown = false;
+            }, true);
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.8));
             const dLight = new THREE.DirectionalLight(0xffffff, 0.4);
@@ -411,7 +458,29 @@
             boxEdgesGroup = new THREE.Group(); scene.add(boxEdgesGroup);
         };
 
+        const stopCameraMotion = () => {
+            isAnimatingCamera = false;
+            controls.enabled = true;
+            // Flush queued deltas once, then clear Trackball's active input state
+            // without moving the current pose back to constructor defaults.
+            controls.update();
+            controls.target0.copy(controls.target);
+            controls.position0.copy(activeCamera.position);
+            controls.up0.copy(activeCamera.up);
+            controls.zoom0 = activeCamera.zoom;
+            controls.reset();
+            if (modelTouchIds.size) suppressModelTouches = true;
+            modelMouseDown = false;
+            isRightDown = false;
+            isTouchPan = false;
+            isPointerDown = false;
+            lastClickTime = 0;
+            if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+            if (fcc) fcc.cancelGesture();
+        };
+
         const syncCameras = (toOrtho) => {
+            stopCameraMotion();
             const aspect = window.innerWidth / window.innerHeight;
             if (toOrtho) {
                 const dist = cameraP.position.distanceTo(controls.target);
@@ -421,6 +490,7 @@
                 cameraO.top = vH / 2;
                 cameraO.bottom = -vH / 2;
                 cameraO.position.copy(cameraP.position);
+                cameraO.up.copy(cameraP.up);
                 cameraO.quaternion.copy(cameraP.quaternion);
                 cameraO.zoom = 1;
                 cameraO.updateProjectionMatrix();
@@ -431,6 +501,7 @@
                 const dir = new THREE.Vector3().subVectors(cameraO.position, controls.target).normalize();
                 if(dir.lengthSq() < 0.0001) dir.set(0, 0, 1);
                 cameraP.position.copy(controls.target).add(dir.multiplyScalar(dist_new));
+                cameraP.up.copy(cameraO.up);
                 cameraP.quaternion.copy(cameraO.quaternion);
                 cameraP.updateProjectionMatrix();
                 activeCamera = cameraP;
@@ -481,10 +552,10 @@
             document.getElementById('legacy-ratio').hidden = isFCC;
             document.getElementById('legacy-opacity').hidden = isFCC;
             ['toggle-size-mode','toggle-avoid-overlap','toggle-diagonal','btn-snap-diagonal'].forEach(id => document.getElementById(id).hidden = isFCC);
-            controls.enablePan = false;
+            controls.noPan = true;
             document.getElementById('legacy-actions').hidden = isFCC;
             document.getElementById('legacy-grid-controls').hidden = isFCC;
-            if (isFCC) { isAnimatingCamera = false; fcc.update(); return; }
+            if (isFCC) { isAnimatingCamera = false; controls.enabled = true; fcc.update(); return; }
             fcc.deactivate();
             while(atomsGroup.children.length > 0){ disposeHierarchy(atomsGroup.children[0]); }
             while(diagonalLinesGroup.children.length > 0){ disposeHierarchy(diagonalLinesGroup.children[0]); }
@@ -750,6 +821,7 @@
         };
 
         const triggerCameraSnap = () => {
+            stopCameraMotion();
             const a = calculateRealA(STATE.type, STATE.ratio, STATE.rMinus, STATE.isAvoidOverlap);
             const draw_a = STATE.isFixedBoxMode ? STATE.savedFixedA : a;
 
@@ -763,7 +835,7 @@
 
             startCamPos.copy(activeCamera.position);
             startTarget.copy(controls.target);
-            startUp.copy(activeCamera.up);
+            startCamQuaternion.copy(activeCamera.quaternion);
 
             endTarget.copy(center);
             const aspect = window.innerWidth / window.innerHeight;
@@ -778,7 +850,13 @@
                 endZoom = base_vH / target_vH;
             }
 
+            const endView = activeCamera.clone();
+            endView.position.copy(endCamPos);
+            endView.up.copy(endUp);
+            endView.lookAt(endTarget);
+            endCamQuaternion.copy(endView.quaternion);
             isAnimatingCamera = true;
+            controls.enabled = false;
             cameraAnimProgress = 0;
         };
 
@@ -808,6 +886,7 @@
                 const newType = e.target.dataset.type;
                 if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
                 isPointerDown = false; lastClickTime = 0; fcc.cancelGesture();
+                stopCameraMotion();
                 STATE.type = newType;
                 if (newType !== 'FCC' && !STATE.isRatioPinned) {
                     STATE.ratio = CONFIG.crystals[newType].min;
@@ -890,11 +969,14 @@
 
             document.getElementById('btn-reset-pos').onclick = () => {
                 if (STATE.type === 'FCC') { fcc.reset(); return; }
+                stopCameraMotion();
                 STATE.viewOffsetX = 0; STATE.viewOffsetY = 0; applyViewOffset();
-                activeCamera.up.set(0, 1, 0);
-
+                cameraP.up.set(0, 1, 0);
+                cameraO.up.set(0, 1, 0);
+                cameraP.zoom = 1;
                 cameraP.position.set(10, 8, 12);
                 controls.target.copy(STATE.currentCenter);
+                cameraP.lookAt(STATE.currentCenter);
 
                 if(STATE.isOrthographic) {
                     syncCameras(true);
@@ -957,6 +1039,7 @@
 
             window.addEventListener('resize', () => {
                 renderer.setSize(window.innerWidth, window.innerHeight);
+                controls.handleResize();
                 applyViewOffset();
             });
 
@@ -1082,7 +1165,7 @@
                     lastPanX = cx; lastPanY = cy; applyViewOffset();
                 }
             }, {passive: true});
-            const cancelPan = () => { isRightDown = false; isTouchPan = false; };
+            const cancelPan = () => { isRightDown = false; isTouchPan = false; stopCameraMotion(); };
             window.addEventListener('pointerup', e => { if(e.button === 2) isRightDown = false; });
             window.addEventListener('pointercancel', () => { cancelPan(); isPointerDown = false; if(clickTimer){clearTimeout(clickTimer);clickTimer=null;} fcc.cancelGesture(); });
             window.addEventListener('blur', cancelPan);
@@ -1099,11 +1182,14 @@
                 if (cameraAnimProgress >= 1) {
                     cameraAnimProgress = 1;
                     isAnimatingCamera = false;
+                    controls.enabled = true;
                 }
                 const ease = 1 - Math.pow(1 - cameraAnimProgress, 3);
-                activeCamera.position.lerpVectors(startCamPos, endCamPos, ease);
                 controls.target.lerpVectors(startTarget, endTarget, ease);
-                activeCamera.up.lerpVectors(startUp, endUp, ease).normalize();
+                activeCamera.quaternion.slerpQuaternions(startCamQuaternion, endCamQuaternion, ease);
+                const distance = THREE.MathUtils.lerp(startCamPos.distanceTo(startTarget), endCamPos.distanceTo(endTarget), ease);
+                activeCamera.position.set(0, 0, distance).applyQuaternion(activeCamera.quaternion).add(controls.target);
+                activeCamera.up.set(0, 1, 0).applyQuaternion(activeCamera.quaternion);
 
                 if (STATE.isOrthographic) {
                     activeCamera.zoom = THREE.MathUtils.lerp(startZoom, endZoom, ease);
@@ -1171,7 +1257,7 @@
         };
 
         initThreeJS();
-        fcc = createFCCView({ THREE, renderer, controls, state: STATE, getCamera: () => activeCamera, cameras: [cameraP,cameraO] });
+        fcc = createFCCView({ THREE, renderer, controls, state: STATE, getCamera: () => activeCamera, cameras: [cameraP,cameraO], stopMotion: stopCameraMotion });
         registerEvents();
 
         STATE.savedFixedA = calculateRealA(STATE.type, STATE.ratio, STATE.rMinus, STATE.isAvoidOverlap);

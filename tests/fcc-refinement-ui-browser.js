@@ -15,8 +15,11 @@ async(page)=>{
   if(await page.locator('#toggle-clipping').evaluate(e=>e.classList.contains('active')))await click('#toggle-clipping');
   for(const projection of ['persp','ortho'])for(const grid of [0,1,2]){
     await click('#grid-mode-group button[data-mode="'+grid+'"]');await click('#btn-'+projection);await click('#btn-reset-pos');
-    const fits=await page.evaluate(()=>{const camera=__fccCameras.normal,r=FCCGeometry.R*3;for(const atom of FCCGeometry.atoms(STATE.gridMode))for(let i=0;i<=12;i++)for(let j=0;j<24;j++){const t=i*Math.PI/12,f=j*2*Math.PI/24,p=new THREE.Vector3(atom.p[0]*3+r*Math.sin(t)*Math.cos(f),atom.p[1]*3+r*Math.cos(t),atom.p[2]*3+r*Math.sin(t)*Math.sin(f)).project(camera);if(Math.abs(p.x)>1.0001||Math.abs(p.y)>1.0001)return false;}return true;});
-    assert(fits,'unclipped complete spheres fit '+projection+' grid'+grid);
+    const before=await page.evaluate(()=>({distance:__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target),zoom:__fccArgs.getCamera().zoom}));
+    await click('#toggle-clipping');
+    const after=await page.evaluate(()=>({distance:__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target),zoom:__fccArgs.getCamera().zoom}));
+    assert(Math.abs(before.distance-after.distance)<1e-8&&Math.abs(before.zoom-after.zoom)<1e-8,'clipping retains view scale '+projection+' grid'+grid);
+    await click('#toggle-clipping');
   }
   await click('#fcc-mode button[data-value="compare"]');await page.waitForFunction(()=>document.querySelector('#fcc-loading').hidden);
   assert(await page.evaluate(()=>!STATE.isClipping&&__fccScenes.normal.children.find(o=>o.isGroup).children.every(o=>o.children[0].material.clippingPlanes.length===6)),'comparison forces clipped atoms without changing normal preference');

@@ -60,7 +60,7 @@ await tools.mcp__playwright__browser_run_code_unsafe({
 });
 ```
 
-These check actual rendered screen-center invariance and ray picking after pixel-space pan, all modes/grids/projections, ion-mode transitions, CDP touch panning/cancellation, keyboard focus, comparison clipping, complete-sphere framing, contextual UI and button gaps. The UI scenario records nine screenshots across desktop and phone orientations.
+These check actual rendered screen-center invariance and ray picking after pixel-space pan, all modes/grids/projections, ion-mode transitions, CDP touch panning/cancellation, keyboard focus, comparison clipping, fixed-scale clipping, contextual UI and button gaps. The UI scenario records nine screenshots across desktop and phone orientations.
 
 ## Fixed-unit comparison followup
 
@@ -73,3 +73,10 @@ await tools.mcp__playwright__browser_run_code_unsafe({
 ```
 
 This initializing scenario checks normal control order, fixed comparison geometry/colors/frame/center/reset, hidden irrelevant controls, restoration of normal preferences, sphere DoubleSide materials and the darker void palette. It writes `.playwright-mcp/fcc-fixed-comparison.png` with the settings panel closed. Continue with the existing scenarios/pan projection invocations above for regression coverage.
+
+
+## Fixed-scale clipping and free rotation
+
+Run the initializing Playwright scenarios `tests/fcc-free-rotation-browser.js`, `tests/fcc-free-rotation-lifecycle-browser.js`, and `tests/fcc-free-rotation-cancel-browser.js` in that order with the same filename-based MCP call as above. They verify scale across clipping toggles, repeated vertical turns in all four modes, rolled projection changes, pinch directions, smooth inverted-view snapping, and held-input cancellation. The UI test now asserts fixed scale rather than automatic fitting of unclipped atoms.
+
+Verification: Node 10/10; rotation/scale 12/12; lifecycle 5/5; cancellation 9/9; baseline 56/56; UI 34/34; orthographic pan/picking 28/28. Physical Safari/device testing remains unperformed.

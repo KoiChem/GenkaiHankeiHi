@@ -1,6 +1,6 @@
 'use strict';
 /* Alternate-page FCC controller. Legacy ion rendering and input stay in FCC.html. */
-function createFCCView({ THREE, renderer, controls, state: shared, getCamera, cameras }) {
+function createFCCView({ THREE, renderer, controls, state: shared, getCamera, cameras, stopMotion }) {
     const G = FCCGeometry, a = 3, baseSites = G.sites();
     const state = { mode:'normal', beforeCompare:'normal', palette:'sites', kind:'both', display:'both', atom:.85, void:.24, sphere:.9, hidden:new Set(), selected:null };
     const scenes = { normal:new THREE.Scene(), void:new THREE.Scene() };
@@ -162,7 +162,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const mode=atomGrid();
         const dims=mode===2?[2,2,2]:mode===1?[2,1,2]:[1,1,1];
         const center=new THREE.Vector3(...dims).multiplyScalar(a/2),shift=center.clone().sub(shared.currentCenter);
-        const span=(mode>0?2:1)+(state.mode==='normal'&&!shared.isClipping?2*G.R:0),ratio=lastSpan===null?1:span/lastSpan;
+        const span=(mode>0?2:1),ratio=lastSpan===null?1:span/lastSpan;
         const oldTarget=controls.target.clone(),newTarget=center.clone();
         if(oldTarget.distanceToSquared(newTarget)>1e-10||ratio!==1){
             for(const camera of cameras){camera.position.sub(oldTarget).multiplyScalar(ratio).add(newTarget);if(camera.isOrthographicCamera)camera.zoom/=ratio;camera.updateProjectionMatrix();}
@@ -176,8 +176,9 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         state.mode=mode;update();
     }
     function reset() {
+        stopMotion();
         shared.viewOffsetX=0;shared.viewOffsetY=0;
-        const camera=getCamera(),span=(atomGrid()>0?2:1)+(state.mode==='normal'&&!shared.isClipping?2*G.R:0);
+        const camera=getCamera(),span=(atomGrid()>0?2:1);
         const dist=a*span*2.8;
         const center=shared.currentCenter.clone();
         controls.target.copy(center);camera.up.set(0,1,0);camera.position.copy(center).add(new THREE.Vector3(1.3,1,1.6).normalize().multiplyScalar(dist));
