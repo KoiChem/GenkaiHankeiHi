@@ -91,6 +91,11 @@
         #fcc-controls .btn-group { height: 34px; }
         #fcc-controls button.active { background: var(--primary); color: white; }
         #fcc-controls .opacity-label { width: 92px; }
+        #fcc-grid-row { grid-template-columns: 1fr 1fr; align-items: center; }
+        #fcc-grid-row .mini-btn-group { width: 100%; }
+        #fcc-controls.comparing #fcc-grid-row { grid-template-columns: 1fr; }
+        #fcc-controls.comparing #fcc-void-controls { border-top: 1px solid rgba(0,0,0,.12); padding-top: 12px; margin-top: 4px; }
+        #fcc-void-controls { margin-bottom: 12px; }
         #fcc-portrait { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 4; padding: 5px 12px; border-radius: 12px; background: rgba(255,255,255,.86); color: #333; font-size: 12px; pointer-events: none; }
         #fcc-divider { position: fixed; left: 50%; top: 0; bottom: 0; border-left: 1px solid rgba(128,128,128,.45); pointer-events: none; z-index: 2; }
         #fcc-loading { position: fixed; left: 16px; bottom: 16px; z-index: 5; color: #555; font-size: 12px; background: rgba(255,255,255,.9); padding: 6px 10px; border-radius: 8px; }
@@ -139,58 +144,8 @@
 
     <div id="fcc-controls" hidden>
         <div class="btn-group" id="fcc-mode"><button data-value="normal" class="active">通常</button><button data-value="void">間隙</button><button data-value="compare">比較表示</button></div>
-        <div class="label-text">色分け</div>
-        <div class="btn-group" id="fcc-palette"><button data-value="sites" class="active">頂点・面心</button><button data-value="abc">ABC層</button></div>
-        <div id="fcc-void-controls" hidden>
-            <div class="label-text">間隙種</div>
-            <div class="btn-group" id="fcc-kind"><button data-value="oct">八面体</button><button data-value="tet">四面体</button><button data-value="both" class="active">両方</button></div>
-            <div class="label-text">表示</div>
-            <div class="btn-group" id="fcc-display"><button data-value="void">間隙</button><button data-value="sphere">間隙球</button><button data-value="both" class="active">両方</button></div>
-        </div>
-        <div class="label-text">不透明度</div>
-        <div class="opacity-row"><label class="opacity-label" for="fcc-atom-opacity">原子 <output id="fcc-atom-value">85%</output></label><input id="fcc-atom-opacity" type="range" min="0" max="1" step="0.01" value="0.85"></div>
-        <div class="opacity-row" id="fcc-void-opacity-row"><label class="opacity-label" for="fcc-void-opacity">間隙 <output id="fcc-void-value">24%</output></label><input id="fcc-void-opacity" type="range" min="0" max="1" step="0.01" value="0.24"></div>
-        <div class="opacity-row" id="fcc-sphere-opacity-row"><label class="opacity-label" for="fcc-sphere-opacity">間隙球 <output id="fcc-sphere-value">90%</output></label><input id="fcc-sphere-opacity" type="range" min="0" max="1" step="0.01" value="0.9"></div>
-        <div class="btn-group" style="margin-top:8px"><button id="fcc-restore">全原子を再表示</button></div>
-    </div>
-    <div class="control-group" id="legacy-ratio" style="margin-bottom: 10px;">
-        <div class="label-text">
-            <span>半径比：陽/陰</span>
-            <div>
-                <span id="ratio-display" style="font-weight:bold; margin-right:4px;">0.414</span>
-                <span id="stability-info">○ 安定</span>
-            </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 4px;">
-            <button id="toggle-ratio-pin" class="toggle-btn" title="半径比を固定">📍</button>
-            <input type="range" id="ratio-slider" min="0" max="1" step="0.001" style="flex: 1;">
-        </div>
-    </div>
-
-    <div class="control-grid">
-        <button id="toggle-size-mode" class="toggle-btn active" data-prop="isFixedBoxMode">格子サイズ固定</button>
-        <button id="toggle-clipping" class="toggle-btn active" data-prop="isClipping">格子切り出し</button>
-
-        <button id="toggle-avoid-overlap" class="toggle-btn active" data-prop="isAvoidOverlap">重なり回避</button>
-        <button id="toggle-diagonal" class="toggle-btn" data-prop="isDiagonalMode">対角断面</button>
-
-        <button id="btn-reset-pos" class="toggle-btn" style="color: #333; border-color: transparent; background: #e0e0e0;">位置をリセット</button>
-        <button id="btn-snap-diagonal" class="toggle-btn disabled">対角断面正面</button>
-    </div>
-
-    <div class="control-group" id="legacy-opacity" style="margin-bottom: 12px;">
-        <div class="label-text" style="margin-bottom: 4px;"><span>不透明度</span></div>
-        <div class="opacity-row" id="opacity-p-row">
-            <span class="opacity-label" style="color: #ff4d4f;">陽：<span id="opacity-p-display">70%</span></span>
-            <input type="range" id="opacity-p-slider" min="0" max="1.0" step="0.01" value="0.70" style="flex: 1;">
-        </div>
-        <div class="opacity-row" id="opacity-m-row">
-            <span class="opacity-label" style="color: #007aff;">陰：<span id="opacity-m-display">60%</span></span>
-            <input type="range" id="opacity-m-slider" min="0" max="1.0" step="0.01" value="0.60" style="flex: 1;">
-        </div>
-    </div>
-
-    <div class="control-grid" style="margin-bottom: 10px;">
+        <div id="fcc-atom-controls">
+            <div id="fcc-grid-row" class="control-grid">
         <div class="mini-btn-group" id="grid-mode-group">
             <button data-mode="0" class="active" title="単位格子">
                 <svg viewBox="1 1 22 22" width="28" height="28" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linejoin="round">
@@ -224,6 +179,70 @@
                 </svg>
             </button>
         </div>
+        <button id="toggle-clipping" class="toggle-btn active" data-prop="isClipping">格子切り出し</button>
+            </div>
+            <div id="fcc-palette-controls">
+                <div class="label-text">色分け</div>
+                <div class="btn-group" id="fcc-palette"><button data-value="sites" class="active">頂点・面心</button><button data-value="abc">ABC層</button></div>
+            </div>
+            <div class="label-text">不透明度</div>
+            <div class="opacity-row"><label class="opacity-label" for="fcc-atom-opacity">原子 <output id="fcc-atom-value">85%</output></label><input id="fcc-atom-opacity" aria-label="原子の不透明度" type="range" min="0" max="1" step="0.01" value="0.85"></div>
+            <div class="btn-group" style="margin-top:8px"><button id="fcc-restore">全原子を再表示</button></div>
+        </div>
+        <div id="fcc-void-controls" hidden>
+            <div class="label-text">間隙種</div>
+            <div class="btn-group" id="fcc-kind"><button data-value="oct">八面体</button><button data-value="tet">四面体</button><button data-value="both" class="active">両方</button></div>
+            <div class="label-text">表示</div>
+            <div class="btn-group" id="fcc-display"><button data-value="void">間隙</button><button data-value="sphere">間隙球</button><button data-value="both" class="active">両方</button></div>
+            <div class="label-text">不透明度</div>
+            <div class="opacity-row" id="fcc-void-opacity-row"><label class="opacity-label" for="fcc-void-opacity">間隙 <output id="fcc-void-value">24%</output></label><input id="fcc-void-opacity" aria-label="間隙の不透明度" type="range" min="0" max="1" step="0.01" value="0.24"></div>
+            <div class="opacity-row" id="fcc-sphere-opacity-row"><label class="opacity-label" for="fcc-sphere-opacity">間隙球 <output id="fcc-sphere-value">90%</output></label><input id="fcc-sphere-opacity" aria-label="間隙球の不透明度" type="range" min="0" max="1" step="0.01" value="0.9"></div>
+        </div>
+    </div>
+    <div class="control-group" id="legacy-ratio" style="margin-bottom: 10px;">
+        <div class="label-text">
+            <span>半径比：陽/陰</span>
+            <div>
+                <span id="ratio-display" style="font-weight:bold; margin-right:4px;">0.414</span>
+                <span id="stability-info">○ 安定</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <button id="toggle-ratio-pin" class="toggle-btn" title="半径比を固定">📍</button>
+            <input type="range" id="ratio-slider" min="0" max="1" step="0.001" style="flex: 1;">
+        </div>
+    </div>
+
+    <div class="control-grid" id="legacy-actions">
+        <button id="toggle-size-mode" class="toggle-btn active" data-prop="isFixedBoxMode">格子サイズ固定</button>
+        <span id="legacy-clipping-slot" hidden></span>
+
+        <button id="toggle-avoid-overlap" class="toggle-btn active" data-prop="isAvoidOverlap">重なり回避</button>
+        <button id="toggle-diagonal" class="toggle-btn" data-prop="isDiagonalMode">対角断面</button>
+
+
+        <button id="btn-snap-diagonal" class="toggle-btn disabled">対角断面正面</button>
+    </div>
+
+    <div class="control-group" id="legacy-opacity" style="margin-bottom: 12px;">
+        <div class="label-text" style="margin-bottom: 4px;"><span>不透明度</span></div>
+        <div class="opacity-row" id="opacity-p-row">
+            <span class="opacity-label" style="color: #ff4d4f;">陽：<span id="opacity-p-display">70%</span></span>
+            <input type="range" id="opacity-p-slider" min="0" max="1.0" step="0.01" value="0.70" style="flex: 1;">
+        </div>
+        <div class="opacity-row" id="opacity-m-row">
+            <span class="opacity-label" style="color: #007aff;">陰：<span id="opacity-m-display">60%</span></span>
+            <input type="range" id="opacity-m-slider" min="0" max="1.0" step="0.01" value="0.60" style="flex: 1;">
+        </div>
+    </div>
+
+    <div id="legacy-grid-controls" style="margin-bottom: 12px;">
+        <div id="legacy-grid-home"></div>
+
+    </div>
+
+    <div class="control-grid" id="common-actions">
+        <button id="btn-reset-pos" class="toggle-btn" style="color: #333; border-color: transparent; background: #e0e0e0;">位置をリセット</button>
         <button id="toggle-quality" class="toggle-btn" data-prop="isLowQuality" style="border-color: var(--warning); color: var(--warning);">軽量モード</button>
     </div>
 
@@ -462,7 +481,9 @@
             document.getElementById('legacy-ratio').hidden = isFCC;
             document.getElementById('legacy-opacity').hidden = isFCC;
             ['toggle-size-mode','toggle-avoid-overlap','toggle-diagonal','btn-snap-diagonal'].forEach(id => document.getElementById(id).hidden = isFCC);
-            controls.enablePan = isFCC;
+            controls.enablePan = false;
+            document.getElementById('legacy-actions').hidden = isFCC;
+            document.getElementById('legacy-grid-controls').hidden = isFCC;
             if (isFCC) { isAnimatingCamera = false; fcc.update(); return; }
             fcc.deactivate();
             while(atomsGroup.children.length > 0){ disposeHierarchy(atomsGroup.children[0]); }
@@ -491,7 +512,7 @@
                 controls.target.copy(newCenter);
             } else if (!isAnimatingCamera) {
                 const shift = newCenter.clone().sub(STATE.currentCenter);
-                controls.target.add(shift);
+                controls.target.copy(newCenter);
                 activeCamera.position.add(shift);
                 STATE.currentCenter.copy(newCenter);
             }
@@ -993,9 +1014,9 @@
             canvas.addEventListener('contextmenu', e => e.preventDefault());
 
             canvas.addEventListener('pointerdown', e => {
-                if (STATE.type === 'FCC') return;
                 if (!e.isPrimary) return;
-                if(e.pointerType === 'mouse' && e.button === 2){ isRightDown = true; lastPanX = e.clientX; lastPanY = e.clientY; return; }
+                if(e.pointerType === 'mouse' && e.button === 2){ isRightDown = true; lastPanX = e.clientX; lastPanY = e.clientY; if(!STATE.isPanelPinned) setPanelVisible(false); return; }
+                if (STATE.type === 'FCC') return;
                 if(e.button === 0) {
                     const now = Date.now();
                     if (now - lastClickTime < 250) {
@@ -1019,9 +1040,9 @@
             });
 
             canvas.addEventListener('pointerup', e => {
-                if (STATE.type === 'FCC') return;
                 if (!e.isPrimary) return;
                 if(e.button === 2) isRightDown = false;
+                if (STATE.type === 'FCC') return;
                 if(e.button === 0 && isPointerDown) {
                     isPointerDown = false;
                     const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
@@ -1042,8 +1063,12 @@
             });
 
             canvas.addEventListener('touchstart', e => {
-                if (STATE.type === 'FCC') return;
-                if(e.touches.length === 2){
+                if(e.touches.length > 1){
+                    if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+                    isPointerDown = false; lastClickTime = 0; fcc.cancelGesture();
+                }
+                isTouchPan = e.touches.length === 2;
+                if(isTouchPan){
                     isTouchPan = true;
                     lastPanX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
                     lastPanY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
@@ -1057,7 +1082,12 @@
                     lastPanX = cx; lastPanY = cy; applyViewOffset();
                 }
             }, {passive: true});
+            const cancelPan = () => { isRightDown = false; isTouchPan = false; };
+            window.addEventListener('pointerup', e => { if(e.button === 2) isRightDown = false; });
+            window.addEventListener('pointercancel', () => { cancelPan(); isPointerDown = false; if(clickTimer){clearTimeout(clickTimer);clickTimer=null;} fcc.cancelGesture(); });
+            window.addEventListener('blur', cancelPan);
             window.addEventListener('touchend', () => isTouchPan = false);
+            window.addEventListener('touchcancel', cancelPan);
         };
 
         const animate = () => {

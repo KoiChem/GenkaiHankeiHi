@@ -16,6 +16,8 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     const clips = [new THREE.Plane(new THREE.Vector3(1,0,0),0),new THREE.Plane(new THREE.Vector3(-1,0,0),a),new THREE.Plane(new THREE.Vector3(0,1,0),0),new THREE.Plane(new THREE.Vector3(0,-1,0),a),new THREE.Plane(new THREE.Vector3(0,0,1),0),new THREE.Plane(new THREE.Vector3(0,0,-1),a)];
     const vec=p=>new THREE.Vector3(...p).multiplyScalar(a);
     const color=s=>s.kind==='oct'?0x8acb35:0x9a55d6;
+    const voidColor=s=>s.kind==='oct'?0xb9dfad:0xd5bce8;
+    const atomClipping=()=>state.mode==='compare'||shared.isClipping;
     const enabled=()=>shared.type==='FCC';
     const quality=()=>shared.isLowQuality?16:32;
     function clear(group,dispose=true) {
@@ -47,7 +49,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     function rebuildAtoms() {
         clear(atomRoot);atomObjects.length=0;atomMaterials.length=0;
         const dims=shared.gridMode===2?[2,2,2]:shared.gridMode===1?[2,1,2]:[1,1,1];
-        const planes=shared.isClipping?clips.map((p,i)=>{const q=p.clone();if(i%2)q.constant=dims[(i-1)/2]*a;return q;}):[];
+        const planes=atomClipping()?clips.map((p,i)=>{const q=p.clone();if(i%2)q.constant=dims[(i-1)/2]*a;return q;}):[];
         // Independent geometries allow the simple legacy disposal routine to coexist safely.
         for(const site of G.atoms(shared.gridMode)){
             const group=new THREE.Group();group.userData.site=site;atomRoot.add(group);
@@ -82,7 +84,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         clear(voidRoot);voidObjects.length=0;
         for(const data of entry.geometries){
             const site=data.site,group=new THREE.Group();group.userData.site=site;voidRoot.add(group);
-            const surfaceMat=new THREE.MeshPhongMaterial({color:color(site),side:THREE.DoubleSide,transparent:true,opacity:state.void,depthWrite:false,shininess:35});
+            const surfaceMat=new THREE.MeshPhongMaterial({color:voidColor(site),side:THREE.DoubleSide,transparent:true,opacity:state.void,depthWrite:false,shininess:35});
             const parts=[];
             for(const key of ['surface','cube','partition']){
                 const mesh=new THREE.Mesh(data[key],surfaceMat.clone());mesh.scale.setScalar(a);mesh.position.copy(vec(site.p));mesh.userData.site=site;group.add(mesh);parts.push({key,mesh});
@@ -112,7 +114,22 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     }
     function syncUI() {
         for(const [id,value] of [['fcc-mode',state.mode],['fcc-palette',state.palette],['fcc-kind',state.kind],['fcc-display',state.display]])document.querySelectorAll('#'+id+' button').forEach(b=>{const selected=b.dataset.value===value;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));});
-        const showVoid=state.mode!=='normal';
+        const isFCC=enabled(),showVoid=state.mode!=='normal';
+        const grid=document.getElementById('grid-mode-group'),clip=document.getElementById('toggle-clipping');
+        if(isFCC){
+            const row=document.getElementById('fcc-grid-row');
+            if(grid.parentElement!==row)row.prepend(grid);
+            if(clip.parentElement!==row)row.append(clip);
+        }else{
+            const home=document.getElementById('legacy-grid-home'),slot=document.getElementById('legacy-clipping-slot');
+            if(grid.parentElement!==home)home.append(grid);
+            if(clip.parentElement!==slot.parentElement)slot.before(clip);
+        }
+        document.getElementById('fcc-controls').classList.toggle('comparing',state.mode==='compare');
+        document.getElementById('fcc-atom-controls').hidden=state.mode==='void';
+        document.getElementById('fcc-palette-controls').hidden=state.mode==='void';
+        grid.hidden=isFCC&&state.mode==='void';
+        clip.hidden=isFCC&&state.mode!=='normal';
         document.getElementById('fcc-void-controls').hidden=!showVoid;
         document.getElementById('fcc-void-opacity-row').hidden=!showVoid||state.display==='sphere';
         document.getElementById('fcc-sphere-opacity-row').hidden=!showVoid||state.display==='void';
@@ -123,10 +140,10 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     }
     function update() {
         active=true;syncUI();
-        const key=[shared.gridMode,quality(),shared.isClipping].join(':');
+        const key=[shared.gridMode,quality(),atomClipping()].join(':');
         if(key!==atomBuild){atomBuild=key;rebuildAtoms();}
         for(const {material,site}of atomMaterials){
-            material.color.setHex(state.palette==='abc'?[0x277ddd,0xe64747,0xf2a522][site.layer]:(site.vertex?0xe64747:0x277ddd));
+            material.color.setHex(state.palette==='abc'?[0x8dbddc,0xf29aa8,0xf2a522][site.layer]:(site.vertex?0xf29aa8:0x8dbddc));
             material.opacity=state.atom;material.depthWrite=state.atom>=1;
         }
         atomObjects.forEach(o=>o.visible=!state.hidden.has(o.userData.site.id)&&state.atom>0);
@@ -140,11 +157,12 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
             o.balls.visible=state.display!=='void'&&state.sphere>0;o.balls.traverse(m=>{if(m.material){m.material.opacity=state.sphere;m.material.depthWrite=state.sphere>=1;}});
         }
         guide();
-        const dims=shared.gridMode===2?[2,2,2]:shared.gridMode===1?[2,1,2]:[1,1,1];
+        const mode=state.mode==='void'?0:shared.gridMode;
+        const dims=mode===2?[2,2,2]:mode===1?[2,1,2]:[1,1,1];
         const center=new THREE.Vector3(...dims).multiplyScalar(a/2),shift=center.clone().sub(shared.currentCenter);
-        const span=shared.gridMode>0?2:1,ratio=lastSpan===null?1:span/lastSpan;
-        const oldTarget=controls.target.clone(),newTarget=oldTarget.clone().add(shift);
-        if(shift.lengthSq()>1e-10||ratio!==1){
+        const span=(mode>0?2:1)+(state.mode==='normal'&&!shared.isClipping?2*G.R:0),ratio=lastSpan===null?1:span/lastSpan;
+        const oldTarget=controls.target.clone(),newTarget=center.clone();
+        if(oldTarget.distanceToSquared(newTarget)>1e-10||ratio!==1){
             for(const camera of cameras){camera.position.sub(oldTarget).multiplyScalar(ratio).add(newTarget);if(camera.isOrthographicCamera)camera.zoom/=ratio;camera.updateProjectionMatrix();}
             controls.target.copy(newTarget);shared.currentCenter.copy(center);
         }
@@ -157,18 +175,20 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     }
     function reset() {
         shared.viewOffsetX=0;shared.viewOffsetY=0;
-        const camera=getCamera(),span=shared.gridMode>0?2:1;
+        const camera=getCamera(),span=(state.mode!=='void'&&shared.gridMode>0?2:1)+(state.mode==='normal'&&!shared.isClipping?2*G.R:0);
         const dist=a*span*2.8;
         const center=shared.currentCenter.clone();
         controls.target.copy(center);camera.up.set(0,1,0);camera.position.copy(center).add(new THREE.Vector3(1.3,1,1.6).normalize().multiplyScalar(dist));
         camera.zoom=1;if(camera.isOrthographicCamera){const h=2*dist*Math.tan(THREE.MathUtils.degToRad(20));camera.top=h/2;camera.bottom=-h/2;camera.left=-h*window.innerWidth/window.innerHeight/2;camera.right=-camera.left;}
-        camera.clearViewOffset();camera.updateProjectionMatrix();controls.update();
+        for(const viewCamera of cameras){viewCamera.clearViewOffset();viewCamera.updateProjectionMatrix();}
+        controls.update();
     }
     function viewportCamera(camera,width,height) {
         const clone=camera.clone();clone.clearViewOffset();
         clone.zoom*=Math.min(1,width/height);
         if(clone.isPerspectiveCamera)clone.aspect=width/height;
         else {const h=camera.top-camera.bottom;clone.left=-h*width/height/2;clone.right=-clone.left;}
+        clone.setViewOffset(width,height,shared.viewOffsetX,shared.viewOffsetY,width,height);
         clone.updateProjectionMatrix();clone.updateMatrixWorld();return clone;
     }
     function render(camera,background) {
@@ -199,7 +219,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
                 const oc=ray.ray.origin.clone().sub(vec(site.p)),b=oc.dot(ray.ray.direction),c=oc.lengthSq()-(G.R*a)**2,d=b*b-c;
                 if(d<0)continue;
                 let lo=Math.max(0,-b-Math.sqrt(d)),hi=-b+Math.sqrt(d);
-                if(shared.isClipping){for(let axis=0;axis<3;axis++){
+                if(atomClipping()){for(let axis=0;axis<3;axis++){
                     const origin=ray.ray.origin.getComponent(axis),dir=ray.ray.direction.getComponent(axis),end=dims[axis]*a;
                     if(Math.abs(dir)<1e-12){if(origin<0||origin>end)hi=-1;continue;}
                     const t0=-origin/dir,t1=(end-origin)/dir;lo=Math.max(lo,Math.min(t0,t1));hi=Math.min(hi,Math.max(t0,t1));
@@ -222,6 +242,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const id=G.pickAtom(hits,state.hidden,count===2?'hide':'restore',recent);
         if(id){if(count===2){state.hidden.add(id);recentHide={id,x:p.x,y:p.y,time:Date.now()};}else{state.hidden.delete(id);recentHide=null;}update();}
     }
+    document.getElementById('ui-panel').addEventListener('pointerdown',()=>{cancelGesture();pointers.clear();});
     const canvas=renderer.domElement;
     canvas.addEventListener('pointerdown',e=>{
         if(!enabled())return;
@@ -261,5 +282,5 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     });
     for(const key of ['atom','void','sphere'])document.getElementById('fcc-'+key+'-opacity').addEventListener('input',e=>{state[key]=Number(e.target.value);document.getElementById('fcc-'+key+'-value').value=Math.round(state[key]*100)+'%';update();});
     document.getElementById('fcc-restore').addEventListener('click',()=>{state.hidden.clear();recentHide=null;update();});
-    return {update,render,reset,cancelGesture,deactivate(){active=false;cancelGesture();document.getElementById('fcc-divider').hidden=true;document.getElementById('fcc-portrait').hidden=true;document.getElementById('fcc-loading').hidden=true;}};
+    return {update,render,reset,cancelGesture,deactivate(){active=false;cancelGesture();syncUI();document.getElementById('fcc-divider').hidden=true;document.getElementById('fcc-portrait').hidden=true;document.getElementById('fcc-loading').hidden=true;}};
 }

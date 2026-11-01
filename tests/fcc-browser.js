@@ -55,14 +55,16 @@ async (page) => {
     assert(await page.evaluate(()=>__fccScenes.void.children.filter(o=>o.isGroup)[1].children.length)===0,'retap removes the selected guide');
     await panel(true);
     for(const grid of [0,1,2]){
+        await click('#fcc-mode button[data-value="normal"]');
         await click('#grid-mode-group button[data-mode="'+grid+'"]');
+        await click('#fcc-mode button[data-value="void"]');
         for(const kind of ['oct','tet','both'])for(const display of ['void','sphere','both']){
             await click('#fcc-kind button[data-value="'+kind+'"]');await click('#fcc-display button[data-value="'+display+'"]');
             const result=await page.evaluate(()=>{const groups=__fccScenes.void.children.find(o=>o.isGroup).children.filter(o=>o.visible);return {count:groups.length,caps:groups.flatMap(o=>o.children.filter(m=>m.isMesh)).filter(m=>m.visible).length};});
             assert(result.count===(kind==='oct'?13:kind==='tet'?8:21),'grid '+grid+' '+kind+' '+display+' retains every selected base-cell site');
         }
     }
-    await click('#grid-mode-group button[data-mode="0"]');await click('#fcc-kind button[data-value="both"]');await click('#fcc-display button[data-value="both"]');
+    await click('#fcc-mode button[data-value="normal"]');await click('#grid-mode-group button[data-mode="0"]');await click('#fcc-mode button[data-value="void"]');await click('#fcc-kind button[data-value="both"]');await click('#fcc-display button[data-value="both"]');
     await click('#fcc-mode button[data-value="compare"]');await click('#btn-reset-pos');await panel(false);
     assert(await page.locator('#fcc-divider').isVisible(),'comparison renders side by side');
     const sync=await page.evaluate(()=>{const a=__fccCameras.normal,b=__fccCameras.void;return a.position.distanceTo(b.position)<1e-10&&a.quaternion.angleTo(b.quaternion)<1e-10&&a.projectionMatrix.equals(b.projectionMatrix);});
