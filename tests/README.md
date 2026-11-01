@@ -61,3 +61,15 @@ await tools.mcp__playwright__browser_run_code_unsafe({
 ```
 
 These check actual rendered screen-center invariance and ray picking after pixel-space pan, all modes/grids/projections, ion-mode transitions, CDP touch panning/cancellation, keyboard focus, comparison clipping, complete-sphere framing, contextual UI and button gaps. The UI scenario records nine screenshots across desktop and phone orientations.
+
+## Fixed-unit comparison followup
+
+Comparison now intentionally hides both palette and grid settings, and its left model always uses one clipped unit cell with vertex/face colors. Saved normal-mode grid, palette and clipping preferences remain unchanged. Pan tests still iterate all saved grid preferences, but comparison picking/framing use effective grid0; review-fit assertions likewise test the rendered base cell.
+
+```js
+await tools.mcp__playwright__browser_run_code_unsafe({
+  filename: "/Users/ikemon/Documents/codings/GitHub/chem/GenkaiHankeiHi/tests/fcc-comparison-browser.js"
+});
+```
+
+This initializing scenario checks normal control order, fixed comparison geometry/colors/frame/center/reset, hidden irrelevant controls, restoration of normal preferences, sphere DoubleSide materials and the darker void palette. It writes `.playwright-mcp/fcc-fixed-comparison.png` with the settings panel closed. Continue with the existing scenarios/pan projection invocations above for regression coverage.
