@@ -17,7 +17,7 @@ async (page) => {
     const click=async(selector)=>{await page.locator(selector).click();await page.waitForTimeout(80);};
     const panel=async(show)=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await page.locator('#toggle-panel-btn').click();await page.waitForTimeout(450);}};
     const countHidden=()=>page.evaluate(()=>__fccScenes.normal.children.find(o=>o.isGroup).children.filter(o=>!o.visible).length);
-    const point=(p,side)=>page.evaluate(({p,side})=>{const camera=__fccArgs.getCamera().clone();camera.clearViewOffset();const w=side?innerWidth/2:innerWidth;camera.zoom*=Math.min(1,w/innerHeight);if(camera.isPerspectiveCamera)camera.aspect=w/innerHeight;else{const h=camera.top-camera.bottom;camera.left=-h*w/innerHeight/2;camera.right=-camera.left;}camera.updateProjectionMatrix();camera.updateMatrixWorld();const v=new THREE.Vector3(...p).project(camera);return{x:(v.x+1)*w/2+(side==='right'?w:0),y:(1-v.y)*innerHeight/2};},{p,side});
+    const point=(p,side)=>page.evaluate(({p,side})=>{const w=side?innerWidth/2:innerWidth;const camera=__fccArgs.views.camera(__fccArgs.getCamera(),w,innerHeight);const v=new THREE.Vector3(...p).project(camera);return{x:(v.x+1)*w/2+(side==='right'?w:0),y:(1-v.y)*innerHeight/2};},{p,side});
     assert(await page.locator('#fcc-controls').isVisible(),'FCC opens with its dedicated controls');
     assert(await page.locator('#legacy-ratio').isHidden(),'FCC hides the ion radius-ratio controls');
     await panel(false);

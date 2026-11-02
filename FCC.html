@@ -105,6 +105,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
     <script src="fcc-geometry.js"></script>
     <script src="fcc-view.js"></script>
+    <script src="model-views.js"></script>
 </head>
 <body>
 
@@ -132,6 +133,7 @@
                     <line x1="12" y1="22.08" x2="12" y2="12"></line>
                 </svg>
             </button>
+            <button id="btn-stereo" class="cam-btn" title="立体視：通常表示" aria-label="立体視：通常表示" style="font-size:10px;min-width:36px">立体視</button>
         </div>
     </div>
 
@@ -288,6 +290,7 @@
 
     const STATE = {
         type: 'NaCl',
+        stereoMode: 'off',
         ratio: 0.414,
         rMinus: 1.0,
         opacityP: 0.70,
@@ -342,6 +345,8 @@
         let suppressModelTouches = false, modelMouseDown = false;
 
         let isAnimatingCamera = false;
+        let rotationGlide = false;
+        let views, stereoWasOrtho = false;
         let cameraAnimProgress = 0;
         let startCamPos = new THREE.Vector3(), endCamPos = new THREE.Vector3();
         let startTarget = new THREE.Vector3(), endTarget = new THREE.Vector3();
@@ -405,6 +410,21 @@
             controls.staticMoving = true;
             controls.rotateSpeed = 3;
             controls.keys = [];
+            controls.dynamicDampingFactor = .15;
+            const nativeRotate = controls.rotateCamera;
+            controls.rotateCamera = () => {
+                controls.staticMoving = !rotationGlide;
+                nativeRotate.call(controls);
+                controls.staticMoving = true;
+            };
+            renderer.domElement.addEventListener('pointerdown', () => { rotationGlide = false; }, true);
+            renderer.domElement.addEventListener('pointermove', e => {
+                if (modelMouseDown && e.pointerType !== 'touch' && controls.enabled && !suppressModelTouches && e.buttons === 1 && (e.movementX || e.movementY)) { rotationGlide = true; }
+            }, true);
+            renderer.domElement.addEventListener('touchmove', e => {
+                if (e.touches.length === 1 && !suppressModelTouches) { rotationGlide = true; }
+            }, {capture:true,passive:true});
+            renderer.domElement.addEventListener('wheel', () => { rotationGlide = false; }, {capture:true,passive:true});
             // r128 Trackball uses the reciprocal orthographic pinch factor.
             // Correct only its touch-pinch path; native wheel zoom stays intact.
             const nativeZoomCamera = controls.zoomCamera;
@@ -459,6 +479,7 @@
         };
 
         const stopCameraMotion = () => {
+            rotationGlide = false;
             isAnimatingCamera = false;
             controls.enabled = true;
             // Flush queued deltas once, then clear Trackball's active input state
@@ -829,7 +850,8 @@
             if(STATE.type === 'FCC') return;
             activeCamera.updateMatrixWorld();
             const ray = new THREE.Raycaster();
-            ray.setFromCamera(new THREE.Vector2(point.x/window.innerWidth*2-1,1-point.y/window.innerHeight*2),activeCamera);
+            const picked = views.pick(activeCamera,point.x,point.y);
+            ray.setFromCamera(picked.ndc,picked.camera);
             const planes = currentPlanes.map(p => ({ n:p.normal.toArray().map(v=>-v), d:p.constant }));
             const hits = ionSites.flatMap(site => {
                 const distance = FCCGeometry.raySphereDistance(ray.ray.origin.toArray(),ray.ray.direction.toArray(),site.position,site.radius,planes);
@@ -901,6 +923,7 @@
             };
 
             DOM.btnPersp.onclick = () => {
+                if (views.stereo()) return;
                 if(!STATE.isOrthographic) return;
                 STATE.isOrthographic = false;
                 DOM.btnOrtho.classList.remove('active');
@@ -908,11 +931,33 @@
                 syncCameras(false);
             };
             DOM.btnOrtho.onclick = () => {
+                if (views.stereo()) return;
                 if(STATE.isOrthographic) return;
                 STATE.isOrthographic = true;
                 DOM.btnPersp.classList.remove('active');
                 DOM.btnOrtho.classList.add('active');
                 syncCameras(true);
+            };
+
+            document.getElementById('btn-stereo').onclick = () => {
+                stopCameraMotion();
+                const old = STATE.stereoMode;
+                const next = old === 'off' ? 'cross' : old === 'cross' ? 'parallel' : 'off';
+                if (old === 'off') {
+                    stereoWasOrtho = STATE.isOrthographic;
+                    if (stereoWasOrtho) { STATE.isOrthographic = false; syncCameras(false); }
+                }
+                STATE.stereoMode = next;
+                fcc.setStereo(next !== 'off');
+                if (next === 'off' && stereoWasOrtho) { STATE.isOrthographic = true; syncCameras(true); }
+                DOM.btnPersp.hidden = next !== 'off'; DOM.btnOrtho.hidden = next !== 'off';
+                DOM.btnPersp.classList.toggle('active', !STATE.isOrthographic);
+                DOM.btnOrtho.classList.toggle('active', STATE.isOrthographic);
+                const label = next === 'off' ? '立体視' : next === 'cross' ? '交差法' : '平行法';
+                const button = document.getElementById('btn-stereo');
+                button.textContent = label; button.title = '立体視：' + (next === 'off' ? '通常表示' : label);
+                button.setAttribute('aria-label',button.title); button.setAttribute('aria-pressed',String(next !== 'off'));
+                button.classList.toggle('active', next !== 'off');
             };
 
             document.getElementById('crystal-type-group').addEventListener('click', e => {
@@ -1002,7 +1047,7 @@
             document.getElementById('btn-reset-pos').onclick = () => {
                 if (STATE.type === 'FCC') { fcc.reset(); return; }
                 stopCameraMotion();
-                STATE.viewOffsetX = 0; STATE.viewOffsetY = 0; applyViewOffset();
+                STATE.viewOffsetX = 0; STATE.viewOffsetY = 0; views.resetLayout(); applyViewOffset();
                 cameraP.up.set(0, 1, 0);
                 cameraO.up.set(0, 1, 0);
                 cameraP.zoom = 1;
@@ -1209,11 +1254,12 @@
 
             controls.update();
             placeScreenLight(ionLight,activeCamera,controls.target);
-            renderer.render(scene, activeCamera);
+            views.render(renderer, scene, activeCamera);
         };
 
         initThreeJS();
-        fcc = createFCCView({ THREE, renderer, controls, state: STATE, getCamera: () => activeCamera, cameras: [cameraP,cameraO], stopMotion: stopCameraMotion, onIonTap: handleIonTap, onViewChange: () => { recentHiddenIon=null; } });
+        views = createModelViews({ THREE, state: STATE, getTarget: () => controls.target });
+        fcc = createFCCView({ THREE, renderer, controls, state: STATE, getCamera: () => activeCamera, cameras: [cameraP,cameraO], views, stopMotion: stopCameraMotion, onIonTap: handleIonTap, onViewChange: () => { recentHiddenIon=null; } });
         registerEvents();
 
         STATE.savedFixedA = calculateRealA(STATE.type, STATE.ratio, STATE.rMinus, STATE.isAvoidOverlap);

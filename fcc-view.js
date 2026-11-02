@@ -5,7 +5,7 @@ function placeScreenLight(light,camera,target) {
 }
 
 /* Alternate-page FCC controller. Legacy ion rendering and input stay in FCC.html. */
-function createFCCView({ THREE, renderer, controls, state: shared, getCamera, cameras, stopMotion, onIonTap, onViewChange }) {
+function createFCCView({ THREE, renderer, controls, state: shared, getCamera, cameras, views, stopMotion, onIonTap, onViewChange }) {
     const G = FCCGeometry, a = 3, baseSites = G.sites();
     const state = { mode:'normal', beforeCompare:'normal', palette:'sites', kind:'both', display:'both', atom:.85, void:.24, sphere:.9, hidden:new Set(), selected:null };
     const scenes = { normal:new THREE.Scene(), void:new THREE.Scene() };
@@ -147,6 +147,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         document.getElementById('fcc-portrait').hidden=!enabled()||state.mode!=='compare'||window.innerWidth>=window.innerHeight;
     }
     function update() {
+        if(views.stereo() && state.mode==='compare'){stereoReturn='compare';state.mode='void';}
         active=true;syncUI();
         const key=[atomGrid(),quality(),atomClipping()].join(':');
         if(key!==atomBuild){atomBuild=key;rebuildAtoms();}
@@ -175,14 +176,17 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         }
 
     }
+    let stereoReturn = null;
     function setMode(mode) {
+        if (views.stereo() && mode === 'compare') { stereoReturn = 'compare'; mode = 'void'; }
+        else stereoReturn = null;
         viewChanged();
         if(mode==='compare'&&state.mode!=='compare')state.beforeCompare=state.mode;
         state.mode=mode;update();
     }
     function reset() {
         stopMotion();
-        shared.viewOffsetX=0;shared.viewOffsetY=0;
+        shared.viewOffsetX=0;shared.viewOffsetY=0;views.resetLayout();
         const camera=getCamera(),span=(atomGrid()>0?2:1);
         const dist=a*span*2.8;
         const center=shared.currentCenter.clone();
@@ -191,25 +195,20 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         for(const viewCamera of cameras){viewCamera.clearViewOffset();viewCamera.updateProjectionMatrix();}
         controls.update();
     }
-    function viewportCamera(camera,width,height) {
-        const clone=camera.clone();clone.clearViewOffset();
-        clone.zoom*=Math.min(1,width/height);
-        if(clone.isPerspectiveCamera)clone.aspect=width/height;
-        else {const h=camera.top-camera.bottom;clone.left=-h*width/height/2;clone.right=-clone.left;}
-        clone.setViewOffset(width,height,shared.viewOffsetX,shared.viewOffsetY,width,height);
-        clone.updateProjectionMatrix();clone.updateMatrixWorld();return clone;
+    function viewportCamera(camera,width,height,side=null) {
+        return views.camera(camera,width,height,side);
     }
     function render(camera,background) {
         if(!active)update();
         const w=window.innerWidth,h=window.innerHeight;
         document.getElementById('fcc-portrait').hidden=state.mode!=='compare'||w>=h;
-        const views=state.mode==='compare'?[{x:0,w:w/2,kind:'normal'},{x:w/2,w:w/2,kind:'void'}]:[{x:0,w,kind:state.mode}];
+        const panes=views.stereo()?[{x:0,w:w/2,kind:state.mode,side:0},{x:w/2,w:w/2,kind:state.mode,side:1}]:state.mode==='compare'?[{x:0,w:w/2,kind:'normal'},{x:w/2,w:w/2,kind:'void'}]:[{x:0,w,kind:state.mode}];
         renderer.setScissorTest(true);
-        for(const view of views){
+        for(const view of panes){
             const scene=scenes[view.kind];scene.background=background;
             renderer.setViewport(view.x,0,view.w,h);renderer.setScissor(view.x,0,view.w,h);
             placeScreenLight(viewLights.get(scene),camera,controls.target);
-            renderer.render(scene,viewportCamera(camera,view.w,h));
+            renderer.render(scene,viewportCamera(camera,view.w,h,view.side ?? null));
         }
         renderer.setScissorTest(false);renderer.setViewport(0,0,w,h);
     }
@@ -217,8 +216,8 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const w=window.innerWidth,h=window.innerHeight,compare=state.mode==='compare',right=compare&&x>=w/2;
         if(kind==='atom'&&(state.mode==='void'||right))return [];
         if(kind==='void'&&(state.mode==='normal'||compare&&!right))return [];
-        const width=compare?w/2:w,left=right?w/2:0;
-        const ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2((x-left)/width*2-1,1-y/h*2),viewportCamera(getCamera(),width,h));
+        const picked=views.pick(getCamera(),x,y,compare);
+        const ray=new THREE.Raycaster();ray.setFromCamera(picked.ndc,picked.camera);
         if(kind==='atom'){
             const hits=[];
             // Analytic ray/sphere + clipping interval keeps hidden sites pickable,
@@ -291,5 +290,9 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     });
     for(const key of ['atom','void','sphere'])document.getElementById('fcc-'+key+'-opacity').addEventListener('input',e=>{state[key]=Number(e.target.value);document.getElementById('fcc-'+key+'-value').value=Math.round(state[key]*100)+'%';update();});
     document.getElementById('fcc-restore').addEventListener('click',()=>{state.hidden.clear();recentHide=null;update();});
-    return {update,render,reset,cancelGesture,viewChanged,deactivate(){active=false;cancelGesture();syncUI();document.getElementById('fcc-divider').hidden=true;document.getElementById('fcc-portrait').hidden=true;document.getElementById('fcc-loading').hidden=true;}};
+    return {setStereo(on){
+        if(on && state.mode==='compare'){stereoReturn='compare';state.mode='void';if(enabled())update();}
+        else if(!on && stereoReturn){const mode=stereoReturn;stereoReturn=null;state.mode=mode;if(enabled())update();}
+        viewChanged();
+    },update,render,reset,cancelGesture,viewChanged,deactivate(){active=false;cancelGesture();syncUI();document.getElementById('fcc-divider').hidden=true;document.getElementById('fcc-portrait').hidden=true;document.getElementById('fcc-loading').hidden=true;}};
 }

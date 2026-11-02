@@ -104,3 +104,9 @@ await tools.mcp__playwright__browser_run_code_unsafe({filename:"/Users/ikemon/Do
 ```
 
 The first initializes scene instrumentation. These check screen-relative lighting and colors, stable sphere/cap IDs, all3ion types, ratio/grid/crystal persistence, opacity0, arbitrary diagonal clipping, restore actions, single-delay and canceled inputs. The cancellation scenario rotates an aligned two-hidden-ion ray180° to check that recent-hide priority is invalidated and the farthest hidden ion restores. Node's new analytic hit tests run with the existing `node --test tests/*.test.cjs` command.
+
+## Stereo, rotational glide and sidebar centering
+
+Run `tests/fcc-stereo-browser.js` with the filename-based Playwright MCP call. Then run `tests/fcc-stereo-lifecycle-browser.js` in the same page/session (it uses the first scenario's browser-only camera instrumentation). The scenarios check off-axis eye assignment and depth disparity, per-eye atom/ion selection, void stereo/compare restoration, projection preference and pose persistence, inertia cancellation, sidebar/mobile centering, screen pan/zoom and guides. Baseline screen-coordinate calculations now use the same shared viewport helper as rendering, accounting for the intentional initial sidebar offset.
+
+The stereoscopic pair is mathematically verified in Chromium. Physical-device binocular comfort and Safari interaction still require user/device checks.
