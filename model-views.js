@@ -6,8 +6,12 @@ function createModelViews({ THREE, state, getTarget }) {
     function resetLayout() {
         const panel = document.getElementById('ui-panel');
         const rect = panel.getBoundingClientRect();
-        const sidePanel = !panel.classList.contains('hidden') && rect.left > innerWidth * .35 && rect.right >= innerWidth - 45;
-        panelOffset = sidePanel ? (innerWidth - rect.left) / 2 : 0;
+        // Match the panel's sidebar media rules, not its transient animated bounds.
+        const sidebarLayout = innerWidth >= 600 || innerHeight <= 540;
+        const transform = new DOMMatrixReadOnly(getComputedStyle(panel).transform);
+        const layoutLeft = rect.left - transform.m41;
+        const sidePanel = sidebarLayout && !panel.classList.contains('hidden');
+        panelOffset = sidePanel ? Math.max(0, (innerWidth - layoutLeft) / 2) : 0;
     }
     function camera(source, width, height, side = null) {
         source.updateMatrixWorld(true);
