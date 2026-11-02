@@ -122,6 +122,15 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     function syncUI() {
         for(const [id,value] of [['fcc-mode',state.mode],['fcc-palette',state.palette],['fcc-kind',state.kind],['fcc-display',state.display]])document.querySelectorAll('#'+id+' button').forEach(b=>{const selected=b.dataset.value===value;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));});
         const isFCC=enabled(),showVoid=state.mode!=='normal';
+        const compareButton=document.querySelector('#fcc-mode button[data-value="compare"]');
+        compareButton.disabled=views.stereo();
+        document.getElementById('fcc-mode-reason').hidden=!views.stereo();
+        const restoreButton=document.getElementById('fcc-restore');
+        restoreButton.disabled=state.hidden.size===0;
+        const restoreReason=document.getElementById('fcc-restore-reason');
+        restoreReason.textContent=state.hidden.size===0?'非表示の原子はありません':'不透明度0%では原子は見えません';
+        restoreReason.hidden=state.hidden.size>0&&state.atom>0;
+
         const grid=document.getElementById('grid-mode-group'),clip=document.getElementById('toggle-clipping');
         if(isFCC){
             const row=document.getElementById('fcc-grid-row');
@@ -136,6 +145,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         document.getElementById('fcc-atom-controls').hidden=state.mode==='void';
         document.getElementById('fcc-palette-controls').hidden=state.mode!=='normal';
         document.getElementById('fcc-grid-row').hidden=state.mode!=='normal';
+        document.getElementById('fcc-grid-label').hidden=state.mode!=='normal';
         grid.hidden=isFCC&&state.mode!=='normal';
         clip.hidden=isFCC&&state.mode!=='normal';
         document.getElementById('fcc-void-controls').hidden=!showVoid;
@@ -285,7 +295,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     canvas.addEventListener('wheel',viewChanged,{passive:true});
     document.addEventListener('visibilitychange',()=>{if(document.hidden){pointers.clear();cancelGesture();}});
     for(const [id,key]of [['fcc-mode','mode'],['fcc-palette','palette'],['fcc-kind','kind'],['fcc-display','display']])document.getElementById(id).addEventListener('click',e=>{
-        const button=e.target.closest('button');if(!button)return;cancelGesture();
+        const button=e.target.closest('button');if(!button||button.disabled)return;cancelGesture();
         if(key==='mode')setMode(button.dataset.value);else{state[key]=button.dataset.value;update();}
     });
     for(const key of ['atom','void','sphere'])document.getElementById('fcc-'+key+'-opacity').addEventListener('input',e=>{state[key]=Number(e.target.value);document.getElementById('fcc-'+key+'-value').value=Math.round(state[key]*100)+'%';update();});
@@ -293,6 +303,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     return {setStereo(on){
         if(on && state.mode==='compare'){stereoReturn='compare';state.mode='void';if(enabled())update();}
         else if(!on && stereoReturn){const mode=stereoReturn;stereoReturn=null;state.mode=mode;if(enabled())update();}
+        if(enabled())syncUI();
         viewChanged();
     },update,render,reset,cancelGesture,viewChanged,deactivate(){active=false;cancelGesture();syncUI();document.getElementById('fcc-divider').hidden=true;document.getElementById('fcc-portrait').hidden=true;document.getElementById('fcc-loading').hidden=true;}};
 }

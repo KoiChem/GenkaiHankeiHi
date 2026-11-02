@@ -112,3 +112,9 @@ Run `tests/fcc-stereo-browser.js` with the filename-based Playwright MCP call. T
 The stereoscopic pair is mathematically verified in Chromium. Physical-device binocular comfort and Safari interaction still require user/device checks.
 
 `tests/fcc-layout-transition-browser.js` verifies that reset centering ignores transient CSS panel translations at mobile/sidebar breakpoints. It uses an isolated page to avoid accumulated instrumentation.
+
+## Panel hierarchy, disabled-state reasons and stereo strength
+
+Run `tests/fcc-panel-browser.js` with the filename-based Playwright MCP call. It initializes its own browser-only camera instrumentation and verifies keyboard states/focus, native unavailable actions and nearby reasons, strength optical ratio and matching picking, state restoration, current-type restore actions and diagonal conditions. It checks enabled text and boundary contrast from actual computed colors and captures all FCC modes at desktop, tablet, portrait and landscape sizes. Disabled-control colors are separately styled but are not included in the enabled-contrast assertion.
+
+The UI test measures selected and unselected controls; this targeted check is not an accessibility compliance audit. Screenshots under `.playwright-mcp/fcc-panel-*.png` are temporary verification artifacts.

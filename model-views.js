@@ -28,7 +28,7 @@ function createModelViews({ THREE, state, getTarget }) {
         view.setViewOffset(width, height, state.viewOffsetX + layout, state.viewOffsetY, width, height);
         if (stereo() && side !== null) {
             const distance = Math.max(.1, source.position.distanceTo(getTarget()));
-            const separation = distance * .035;
+            const separation = distance * .035 * (state.stereoStrong ? 1.5 : 1);
             const eye = (side === 0 ? -1 : 1) * (state.stereoMode === 'cross' ? -1 : 1) * separation / 2;
             const right = new THREE.Vector3(1, 0, 0).applyQuaternion(source.quaternion);
             view.position.addScaledVector(right, eye);
