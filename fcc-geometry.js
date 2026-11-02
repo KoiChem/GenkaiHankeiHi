@@ -139,6 +139,20 @@
         }
         return {surface,cube:outer,partition};
     }
+    // Half-spaces use n·point <= d, matching the convex geometry above.
+    function raySphereDistance(origin,direction,center,radius,planes=[]) {
+        const relative=sub(origin,center),b=dot(relative,direction),c=dot(relative,relative)-radius*radius;
+        const discriminant=b*b-c;
+        if(discriminant<0)return null;
+        let lo=Math.max(0,-b-Math.sqrt(discriminant)),hi=-b+Math.sqrt(discriminant);
+        for(const plane of planes){
+            const distance=plane.d-dot(plane.n,origin),slope=-dot(plane.n,direction);
+            if(Math.abs(slope)<1e-12){if(distance < -1e-9)return null;continue;}
+            const t=-distance/slope;
+            if(slope>0)lo=Math.max(lo,t);else hi=Math.min(hi,t);
+        }
+        return hi>=lo-1e-9?lo:null;
+    }
     function pickAtom(hits,hidden,action,recent=null){
         const unique=new Map();for(const h of hits)if(!unique.has(h.id)||h.distance<unique.get(h.id).distance)unique.set(h.id,h);
         const candidates=[...unique.values()].filter(h=>action==='hide'?!hidden.has(h.id):hidden.has(h.id));
@@ -146,5 +160,5 @@
         candidates.sort((a,b)=>action==='hide'?a.distance-b.distance:b.distance-a.distance);
         return candidates.length?candidates[0].id:null;
     }
-    return {R,atoms,sites,geometry,contains,distance,pickAtom};
+    return {R,atoms,sites,geometry,contains,distance,pickAtom,raySphereDistance};
 }));

@@ -14,7 +14,7 @@ async(page)=>{
   check(await page.evaluate(()=>{const lines=__fccScenes.normal.children.filter(o=>o.isLineSegments);return lines.length===1&&new THREE.Box3().setFromObject(lines[0]).min.toArray().every(v=>Math.abs(v)<1e-9)&&new THREE.Box3().setFromObject(lines[0]).max.toArray().every(v=>Math.abs(v-3)<1e-9);}),'comparison frame covers exactly the base unit cell');
   check(comparison.savedGrid===2&&!comparison.savedClip&&comparison.clipped,'comparison clips without overwriting saved normal grid/clipping');
   check(comparison.sides,'interstitial sphere curved surfaces use DoubleSide');
-  check(JSON.stringify(comparison.voidColors)===JSON.stringify(['aad497','c7a5de']),'void surfaces use the moderately darker approved palette');
+  check(JSON.stringify(comparison.voidColors)===JSON.stringify(['c7a5de','f5d78e']),'void surfaces use orange and purple families');
   await click('#btn-reset-pos');check(await page.evaluate(()=>Math.abs(__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target)-8.4)<1e-8),'comparison reset uses unit-cell fit rather than saved eight-cell span');check(await page.evaluate(()=>__fccArgs.controls.target.toArray().every(v=>Math.abs(v-1.5)<1e-9)),'comparison reset targets the base cell');
   await click('#fcc-mode button[data-value="normal"]');
   check(await page.locator('#fcc-palette button[data-value="abc"]').getAttribute('aria-pressed')==='true'&&await page.locator('#grid-mode-group button[data-mode="2"]').evaluate(e=>e.classList.contains('active')),'normal palette and eight-cell preference restore on return');

@@ -15,7 +15,7 @@ async (page) => {
     assert(await fits(),'portrait comparison entry fits the cell without reset');
     await panel(false);await page.screenshot({path:'.playwright-mcp/fcc-phone-portrait-fixed.png'});
     await page.setViewportSize({width:1280,height:720});await page.waitForTimeout(500);await panel(true);await click('#fcc-mode button[data-value="normal"]');
-    await click('#grid-mode-group button[data-mode="2"]');assert(await fits(),'desktop 8-cell switch fits all corners without reset');
+    const beforeGrid=await page.evaluate(()=>({d:__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target),z:__fccArgs.getCamera().zoom}));await click('#grid-mode-group button[data-mode="2"]');const afterGrid=await page.evaluate(()=>({d:__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target),z:__fccArgs.getCamera().zoom}));assert(Math.abs(beforeGrid.d-afterGrid.d)<1e-8&&Math.abs(beforeGrid.z-afterGrid.z)<1e-8,'desktop 8-cell switch preserves camera distance and zoom');
     const before=await page.evaluate(()=>__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target));
     await click('#grid-mode-group button[data-mode="0"]');await click('#grid-mode-group button[data-mode="2"]');
     const after=await page.evaluate(()=>__fccArgs.getCamera().position.distanceTo(__fccArgs.controls.target));assert(Math.abs(before-after)<1e-8,'grid round trip preserves the user zoom ratio');

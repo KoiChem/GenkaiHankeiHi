@@ -80,3 +80,27 @@ This initializing scenario checks normal control order, fixed comparison geometr
 Run the initializing Playwright scenarios `tests/fcc-free-rotation-browser.js`, `tests/fcc-free-rotation-lifecycle-browser.js`, and `tests/fcc-free-rotation-cancel-browser.js` in that order with the same filename-based MCP call as above. They verify scale across clipping toggles, repeated vertical turns in all four modes, rolled projection changes, pinch directions, smooth inverted-view snapping, and held-input cancellation. The UI test now asserts fixed scale rather than automatic fitting of unclipped atoms.
 
 Verification: Node 10/10; rotation/scale 12/12; lifecycle 5/5; cancellation 9/9; baseline 56/56; UI 34/34; orthographic pan/picking 28/28. Physical Safari/device testing remains unperformed.
+
+## Free rotation and fixed-scale clipping
+
+The user opted out of automatic fitting when clipping changes. The old complete-unclipped-sphere auto-fit check is replaced with equal camera distance/zoom checks.
+
+Run `tests/fcc-free-rotation-browser.js` first to initialize instrumentation and verify all six clipping/projection/grid combinations, multiple full turns in FCC/CsCl/NaCl/ZnS, rolled projection switches and reset rest. Then run `tests/fcc-free-rotation-lifecycle-browser.js` for inverted-up snap continuity, mid-drag reset, comparison synchronization and pinch direction in both projections. `tests/fcc-free-rotation-cancel-browser.js` covers missed mouseup, held touches across reset/projection/snap, old held screen pans and fresh-gesture recovery.
+
+```js
+await tools.mcp__playwright__browser_run_code_unsafe({filename:"/Users/ikemon/Documents/codings/GitHub/chem/GenkaiHankeiHi/tests/fcc-free-rotation-browser.js"});
+await tools.mcp__playwright__browser_run_code_unsafe({filename:"/Users/ikemon/Documents/codings/GitHub/chem/GenkaiHankeiHi/tests/fcc-free-rotation-lifecycle-browser.js"});
+await tools.mcp__playwright__browser_run_code_unsafe({filename:"/Users/ikemon/Documents/codings/GitHub/chem/GenkaiHankeiHi/tests/fcc-free-rotation-cancel-browser.js"});
+```
+
+## Ion gestures, fixed grid scale and screen-relative lighting
+
+Current ion gesture policy on FCC.html is single auxiliary action after300ms, double hide and triple restore. Diagonal view is button-only. The original index.html is untouched. FCC normal1/4/8 grid changes retain camera distance/zoom and recenter only; old automatic-grid-fit expectations are intentionally obsolete. Explicit view reset remains available.
+
+```js
+await tools.mcp__playwright__browser_run_code_unsafe({filename:"/Users/ikemon/Documents/codings/GitHub/chem/GenkaiHankeiHi/tests/fcc-ion-gestures-browser.js"});
+await tools.mcp__playwright__browser_run_code_unsafe({filename:"/Users/ikemon/Documents/codings/GitHub/chem/GenkaiHankeiHi/tests/fcc-ion-persistence-browser.js"});
+await tools.mcp__playwright__browser_run_code_unsafe({filename:"/Users/ikemon/Documents/codings/GitHub/chem/GenkaiHankeiHi/tests/fcc-ion-cancel-browser.js"});
+```
+
+The first initializes scene instrumentation. These check screen-relative lighting and colors, stable sphere/cap IDs, all3ion types, ratio/grid/crystal persistence, opacity0, arbitrary diagonal clipping, restore actions, single-delay and canceled inputs. The cancellation scenario rotates an aligned two-hidden-ion ray180° to check that recent-hide priority is invalidated and the farthest hidden ion restores. Node's new analytic hit tests run with the existing `node --test tests/*.test.cjs` command.
