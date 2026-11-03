@@ -1314,6 +1314,14 @@
         document.querySelectorAll('.type-btns button').forEach(b => b.classList.toggle('active', b.dataset.type === STATE.type));
         updateScene();
         fcc.reset();
+        // Center the projected initial unit cell, whose perspective silhouette
+        // is asymmetric even when its 3D center is on the viewport center.
+        const initialView = views.camera(activeCamera, innerWidth, innerHeight);
+        const center = STATE.currentCenter, projectedY = [];
+        for (const x of [0, 2 * center.x]) for (const y of [0, 2 * center.y]) for (const z of [0, 2 * center.z]) {
+            projectedY.push(new THREE.Vector3(x, y, z).project(initialView).y);
+        }
+        STATE.viewOffsetY = -(Math.min(...projectedY) + Math.max(...projectedY)) * innerHeight / 4;
         animate();
     }
 </script>
