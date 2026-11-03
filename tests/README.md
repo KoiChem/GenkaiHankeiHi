@@ -121,4 +121,6 @@ Run `tests/fcc-panel-browser.js` with the filename-based Playwright MCP call. It
 
 `tests/fcc-view-controls-browser.js` checks the NaCl initial view, direct stereo-to-projection changes, comparison restoration, enlarged grid icons, ion slider thumb colors, and the unlabelled section cube including keyboard access.
 
+`tests/fcc-panel-sizing-browser.js` checks panel geometry, phone/tablet pin defaults and crystal switching at matched scale in both projections.
+
 The UI test measures selected and unselected controls; this targeted check is not an accessibility compliance audit. Screenshots under `.playwright-mcp/fcc-panel-*.png` are temporary verification artifacts.

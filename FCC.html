@@ -102,10 +102,10 @@
         @media (max-height: 540px) { #ui-panel { top: 66px; bottom: auto; max-height: calc(100dvh - 100px); padding: 12px; width: 290px; left: auto; right: 12px; transform: none; } #ui-panel.hidden { transform: translateX(350px); } }
 
         :root { --primary:#245b8c; --panel-bg:#f8fbff; --btn-height:40px; }
-        #ui-panel { width:340px; padding:16px; box-sizing:border-box; border:1px solid #8094a8; max-height:calc(100dvh - 90px); color:#20364b; background:#f8fbff; }
+        #ui-panel { width:310px; padding:12px; box-sizing:border-box; border:1px solid #8094a8; max-height:calc(100dvh - 90px); color:#20364b; background:#f8fbff; }
         .label-text { color:#43566a; font-size:12px; line-height:1.4; margin-bottom:6px; }
         #ui-panel .btn-group { height:auto; min-height:40px; gap:8px; margin-bottom:10px; }
-        #ui-panel button { height:40px; min-height:40px; padding:6px 8px; color:#254560; background:#fff; border:1px solid #6b8198; border-radius:8px; font-size:13px; line-height:1.3; font-weight:600; box-shadow:none; transition:background-color .15s; }
+        #ui-panel button { height:40px; min-height:40px; padding:6px 4px; color:#254560; background:#fff; border:1px solid #6b8198; border-radius:8px; font-size:13px; line-height:1.3; font-weight:600; box-shadow:none; transition:background-color .15s; }
         #ui-panel button:hover:not(:disabled) { background:#edf4fb; border-color:#245b8c; }
         #ui-panel button.active,#ui-panel .type-btns button.active,#ui-panel .bg-btns button.active { color:#173b61 !important; background:#dceafb !important; border-color:#406b96 !important; box-shadow:inset 0 0 0 1px #406b96; font-weight:700; }
         #ui-panel button:disabled,#ui-panel button.disabled { color:#5a6875 !important; background:#edf1f5 !important; border-color:#a9b4bf !important; box-shadow:none; opacity:1; filter:none; cursor:default; pointer-events:auto; }
@@ -117,12 +117,14 @@
         #ui-panel .cam-btn svg { width:18px; height:18px; }
         .stereo-control { display:flex; gap:6px; padding:0 4px; border:1px solid #8094a8; border-radius:9px; background:#edf4fb; flex:1; min-width:0; }
         #ui-panel #btn-stereo { flex:1; min-width:56px; }
+        #ui-panel #btn-stereo { border:0 !important; box-shadow:none !important; background:transparent !important; }
+        .stereo-control.active { background:#dceafb; border-color:#406b96; }
         #ui-panel #btn-stereo-strong { flex:0 0 40px; padding:4px; }
-        #ui-panel #btn-persp,#ui-panel #btn-ortho { flex:0 0 44px; }
+        #ui-panel #btn-persp,#ui-panel #btn-ortho { flex:0 0 66px; }
         .context-reason { display:none !important; }
         .full-row { grid-column:1/-1; margin:0; }
         #fcc-controls .btn-group { height:auto; }
-        #fcc-grid-row { grid-template-columns:1.2fr 1fr; gap:8px; }
+        #fcc-grid-row { grid-template-columns:minmax(132px,1.2fr) minmax(0,1fr); gap:8px; }
         .mini-btn-group { gap:6px; height:auto; min-height:40px; }
         #ui-panel .mini-btn-group button { flex-direction:column; gap:1px; padding:4px; font-size:11px; min-width:40px; }
         #ui-panel .mini-btn-group svg { width:20px; height:20px; }
@@ -151,8 +153,9 @@
         #ui-panel .bg-btns button[data-color=gray]::before { background:#888; }
         #ui-panel .bg-btns button[data-color=black]::before { background:#222; }
         #ui-panel .bg-btns button.active { background:#dceafb !important; color:#173b61 !important; border-color:#406b96 !important; }
-        @media(max-width:599px) { #ui-panel { width:calc(100% - 24px); max-width:360px; max-height:72dvh; bottom:12px; padding:14px; } }
-        @media(max-height:540px) { #ui-panel { width:320px; max-width:calc(100% - 24px); top:66px; right:12px; left:auto; bottom:auto; max-height:calc(100dvh - 82px); padding:12px; } }
+        @media(max-width:599px) { #ui-panel { width:calc(100% - 24px); max-width:310px; max-height:72dvh; bottom:12px; padding:12px; } }
+        @media(max-height:540px) { #ui-panel { width:310px; max-width:calc(100% - 24px); top:66px; right:12px; left:auto; bottom:auto; max-height:calc(100dvh - 82px); padding:12px; } }
+        @media(max-width:319px) { .cam-btn-container { flex-wrap:wrap; } .stereo-control { flex-basis:100%; } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
@@ -167,8 +170,8 @@
 
 <div id="ui-panel">
     <div class="btn-group" id="panel-utilities">
-        <button id="toggle-fullscreen" class="toggle-btn">全画面</button>
         <button id="toggle-pin" class="toggle-btn active" style="border-width: 1.5px;">パネル固定</button>
+        <button id="toggle-fullscreen" class="toggle-btn">全画面</button>
 
     </div>
 
@@ -370,7 +373,7 @@
         isFixedBoxMode: true,
         isAvoidOverlap: true,
         isLowQuality: false,
-        isPanelPinned: true,
+        isPanelPinned: !(matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600),
         isRatioPinned: false,
         isDiagonalMode: false,
         isOrthographic: false,
@@ -624,6 +627,7 @@
 
         function syncPanelUI() {
             const stereo = STATE.stereoMode !== 'off';
+            document.getElementById('toggle-pin').classList.toggle('active',STATE.isPanelPinned);
             const strong = document.getElementById('btn-stereo-strong');
             strong.disabled = !stereo;
             strong.classList.toggle('active',STATE.stereoStrong);
@@ -987,6 +991,7 @@
                 button.textContent = label; button.title = '立体視：' + (next === 'off' ? '通常表示' : label);
                 button.setAttribute('aria-label',button.title); button.setAttribute('aria-pressed',String(next !== 'off'));
                 button.classList.toggle('active', next !== 'off');
+                button.parentElement.classList.toggle('active', next !== 'off');
                 syncPanelUI();
             };
 
@@ -1015,6 +1020,9 @@
             document.getElementById('crystal-type-group').addEventListener('click', e => {
                 if(e.target.tagName !== 'BUTTON') return;
                 const newType = e.target.dataset.type;
+                const oldType = STATE.type;
+                const cellSize = type => type === 'FCC' ? 3 : STATE.isFixedBoxMode ? STATE.savedFixedA : calculateRealA(type,STATE.ratio,STATE.rMinus,STATE.isAvoidOverlap);
+                const oldSize = cellSize(oldType);
                 stopCameraMotion();
                 STATE.type = newType;
                 if (newType !== 'FCC' && !STATE.isRatioPinned) {
@@ -1023,6 +1031,12 @@
                 }
                 document.querySelectorAll('.type-btns button').forEach(b => b.classList.toggle('active', b === e.target));
                 updateScene();
+                if (oldType !== newType && ['NaCl','ZnS','FCC'].includes(oldType) && ['NaCl','ZnS','FCC'].includes(newType)) {
+                    const factor = cellSize(newType) / oldSize;
+                    if (activeCamera.isOrthographicCamera) { activeCamera.zoom /= factor; activeCamera.updateProjectionMatrix(); }
+                    else activeCamera.position.sub(controls.target).multiplyScalar(factor).add(controls.target);
+                    controls.update();
+                }
             });
 
             // SVGボタン切り替えイベント

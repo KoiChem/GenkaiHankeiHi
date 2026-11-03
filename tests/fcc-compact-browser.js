@@ -31,7 +31,7 @@ async(page)=>{
   gridLabels:[...document.querySelectorAll('#grid-mode-group button')].map(b=>b.textContent.trim()),
   projections:[...document.querySelectorAll('#btn-persp,#btn-ortho')].map(b=>({text:b.textContent.trim(),label:b.getAttribute('aria-label')}))
  }));
- check(panel.top.join(',')==='全画面,パネル固定'&&panel.common.join(',')==='位置を戻す,軽量モード','reset is next to lightweight mode',JSON.stringify(panel));
+ check(panel.top.join(',')==='パネル固定,全画面'&&panel.common.join(',')==='位置を戻す,軽量モード','reset is next to lightweight mode',JSON.stringify(panel));
  check(panel.visibleReasons.length===0,'explanatory notes are not visible',JSON.stringify(panel.visibleReasons));
  check(panel.gridLabels.every(x=>!x)&&panel.projections.every(p=>!p.text&&p.label),'icons retain names without visual text',JSON.stringify(panel));
  await click('#fcc-mode [data-value=void]');await page.waitForFunction(()=>document.querySelector('#fcc-loading').hidden);
