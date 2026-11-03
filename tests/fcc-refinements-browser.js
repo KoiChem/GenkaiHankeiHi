@@ -1,7 +1,7 @@
 async(page)=>{
   const checks=[],assert=(ok,message)=>{if(!ok)throw new Error(message);checks.push(message);};
   await page.addInitScript(()=>document.addEventListener('DOMContentLoaded',()=>{const original=window.createFCCView;window.createFCCView=options=>{window.__fccArgs=options;window.__fccScenes={};window.__fccCameras={};const result=original(options),render=options.renderer.render.bind(options.renderer);options.renderer.render=(scene,camera)=>{const site=scene.children.find(o=>o.isGroup)?.children[0]?.userData?.site;if(site){const kind=site.kind?'void':'normal';__fccScenes[kind]=scene;__fccCameras[kind]=camera;}return render(scene,camera);};return result;};}));
-  await page.setViewportSize({width:1280,height:800});await page.goto('http://127.0.0.1:8765/FCC.html');await page.waitForFunction(()=>window.__fccCameras?.normal);
+  await page.setViewportSize({width:1280,height:800});await page.goto('http://127.0.0.1:8765/FCC.html');await page.locator('#crystal-type-group button[data-type=FCC]').click();await page.locator('#btn-reset-pos').click();await page.waitForFunction(()=>window.__fccCameras?.normal);
   const panel=async show=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await page.locator('#toggle-panel-btn').click();await page.waitForTimeout(450);}};
   const click=async s=>{await page.locator(s).click();await page.waitForTimeout(100);};
   const drag=async(button,dx,dy)=>{await page.mouse.move(500,400);await page.mouse.down({button});await page.mouse.move(500+dx,400+dy,{steps:8});await page.mouse.up({button});await page.waitForTimeout(400);};

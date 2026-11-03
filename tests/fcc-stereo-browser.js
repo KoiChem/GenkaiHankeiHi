@@ -6,6 +6,7 @@ async(page)=>{
  }));
  await page.setViewportSize({width:1280,height:800});await page.goto('http://127.0.0.1:8765/FCC.html');await page.waitForFunction(()=>window.__frames?.length);
  const click=async s=>{await page.locator(s).click();await page.waitForTimeout(120);};
+ await click('#crystal-type-group button[data-type=FCC]');await click('#btn-reset-pos');
  const panel=async show=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await click('#toggle-panel-btn');await page.waitForTimeout(350);}};
  const pose=()=>page.evaluate(()=>__args.getCamera().quaternion.toArray());
  const angle=(a,b)=>2*Math.acos(Math.min(1,Math.abs(a.reduce((s,v,i)=>s+v*b[i],0))));
@@ -19,7 +20,7 @@ async(page)=>{
  await panel(true);await click('#btn-reset-pos');const reset=await pose();await page.waitForTimeout(400);check(angle(reset,await pose())<1e-6,'reset clears remaining rotation');
  await click('#btn-ortho');await click('#btn-stereo');
  check(await page.evaluate(()=>STATE.stereoMode==='cross'&&!STATE.isOrthographic),'stereo enters cross mode with perspective');
- check(await page.locator('#btn-ortho').isVisible()&&await page.locator('#btn-persp').isVisible()&&await page.locator('#btn-ortho').isDisabled()&&await page.locator('#btn-persp').isDisabled(),'stereo keeps projection controls visible and disabled');
+ check(await page.locator('#btn-ortho').isVisible()&&await page.locator('#btn-persp').isVisible()&&await page.locator('#btn-ortho').isEnabled()&&await page.locator('#btn-persp').isEnabled(),'stereo keeps projection controls visible and enabled');
  let optics=await page.evaluate(()=>{const cs=__frames.slice(-2).map(v=>v.c),target=__args.controls.target,p=target.clone().add(new THREE.Vector3(.3,.4,.7));return{eyes:cs.map(c=>c.userData.eyeOffset),center:cs.map(c=>target.clone().project(c).toArray()),point:cs.map(c=>p.clone().project(c).toArray())};});
  check(optics.eyes[0]>0&&optics.eyes[1]<0,'cross method reverses eye assignment');
  check(optics.center.every(v=>Math.abs(v[0])<1e-7&&Math.abs(v[1])<1e-7),'both stereo focus planes center without panel offsets');

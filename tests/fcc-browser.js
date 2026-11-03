@@ -13,12 +13,14 @@ async (page) => {
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.setViewportSize({width:1280,height:800});
     await page.goto('http://127.0.0.1:8765/FCC.html');
+    await page.locator('#crystal-type-group button[data-type=FCC]').click();
+    await page.locator('#btn-reset-pos').click();
     await page.waitForFunction(()=>window.__fccScenes?.normal);
     const click=async(selector)=>{await page.locator(selector).click();await page.waitForTimeout(80);};
     const panel=async(show)=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await page.locator('#toggle-panel-btn').click();await page.waitForTimeout(450);}};
     const countHidden=()=>page.evaluate(()=>__fccScenes.normal.children.find(o=>o.isGroup).children.filter(o=>!o.visible).length);
     const point=(p,side)=>page.evaluate(({p,side})=>{const w=side?innerWidth/2:innerWidth;const camera=__fccArgs.views.camera(__fccArgs.getCamera(),w,innerHeight);const v=new THREE.Vector3(...p).project(camera);return{x:(v.x+1)*w/2+(side==='right'?w:0),y:(1-v.y)*innerHeight/2};},{p,side});
-    assert(await page.locator('#fcc-controls').isVisible(),'FCC opens with its dedicated controls');
+    assert(await page.locator('#fcc-controls').isVisible(),'FCC selection opens its dedicated controls');
     assert(await page.locator('#legacy-ratio').isHidden(),'FCC hides the ion radius-ratio controls');
     await panel(false);
     let p=await point([3,1.5,1.5]);

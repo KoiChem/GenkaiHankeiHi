@@ -117,6 +117,8 @@ The stereoscopic pair is mathematically verified in Chromium. Physical-device bi
 
 Run `tests/fcc-panel-browser.js` with the filename-based Playwright MCP call. It initializes its own browser-only camera instrumentation and verifies keyboard states/focus, native unavailable actions, strength optical ratio and matching picking, state restoration, current-type restore actions and diagonal conditions. Explanatory notes are visually hidden per the compact-panel design. It checks enabled text and boundary contrast from actual computed colors and captures all FCC modes at desktop, tablet, portrait and landscape sizes. Disabled-control colors are separately styled but are not included in the enabled-contrast assertion.
 
-`tests/fcc-compact-browser.js` checks the compact layout, opacity defaults, visible disabled stereo projection buttons, and view-cube drag direction and speed after pitch and roll, including an ion diagonal section.
+`tests/fcc-compact-browser.js` checks the compact layout, opacity defaults, visible stereo projection buttons, and view-cube drag direction and speed after pitch and roll, including an ion diagonal section. It explicitly selects FCC because the page starts in NaCl mode.
+
+`tests/fcc-view-controls-browser.js` checks the NaCl initial view, direct stereo-to-projection changes, comparison restoration, enlarged grid icons, ion slider thumb colors, and the unlabelled section cube including keyboard access.
 
 The UI test measures selected and unselected controls; this targeted check is not an accessibility compliance audit. Screenshots under `.playwright-mcp/fcc-panel-*.png` are temporary verification artifacts.

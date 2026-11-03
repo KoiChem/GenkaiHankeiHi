@@ -3,6 +3,7 @@ async(page)=>{
  await page.addInitScript(()=>document.addEventListener('DOMContentLoaded',()=>{const make=createFCCView;window.createFCCView=o=>{window.__args=o;window.__frames=[];window.__scenes={};const draw=o.renderer.render.bind(o.renderer);o.renderer.render=(s,c)=>{__frames.push({s,c});if(__frames.length>4)__frames.shift();const site=s.children.find(g=>g.isGroup)?.children[0]?.userData?.site;if(site)__scenes[site.kind?'void':'normal']=s;else __scenes.ion=s;return draw(s,c);};return make(o);};}));
  await page.setViewportSize({width:1280,height:800});await page.goto('http://127.0.0.1:8765/FCC.html');await page.waitForFunction(()=>window.__args);
  const click=async s=>{await page.locator(s).click();await page.waitForTimeout(100);};
+ await click('#crystal-type-group button[data-type=FCC]');await click('#btn-reset-pos');
  const panel=async show=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await click('#toggle-panel-btn');await page.waitForTimeout(350);}};
  check(await page.locator('#btn-stereo-strong').isDisabled(),'strong stereo is disabled outside stereoscopic view');
  check(await page.locator('#stereo-strength-reason').isHidden(),'disabled strong stereo has no visible explanation');
@@ -32,8 +33,8 @@ async(page)=>{
  await click('#fcc-mode button[data-value=compare]');check(await page.locator('#fcc-grid-label').isHidden(),'comparison has no orphaned grid heading');
  await click('#fcc-mode button[data-value=normal]');await click('#grid-mode-group button[data-mode="0"]');await click('#crystal-type-group button[data-type=NaCl]');
  check(await page.locator('#ion-restore').isDisabled()&&await page.locator('#ion-restore-reason').isHidden(),'ion restore is disabled without a visible explanation');
- await click('#toggle-clipping');check(await page.locator('#toggle-diagonal').isDisabled()&&await page.locator('#btn-snap-diagonal').isDisabled()&&await page.locator('#ion-section-reason').isHidden(),'clipping-off disables unavailable diagonal actions');
- await click('#toggle-clipping');await click('#toggle-diagonal');check(await page.locator('#btn-snap-diagonal').isEnabled()&&await page.locator('#ion-section-reason').isHidden(),'enabling the diagonal restores its front-view action');
+ await click('#toggle-clipping');check(await page.locator('#toggle-diagonal').isDisabled()&&await page.locator('#ion-section-reason').isHidden(),'clipping-off disables the diagonal action');
+ await click('#toggle-clipping');await click('#toggle-diagonal');check(await page.locator('#toggle-diagonal').getAttribute('aria-pressed')==='true'&&await page.locator('#btn-snap-diagonal').count()===0,'diagonal remains available without a separate front-view button');
  const contrast=await page.evaluate(()=>{
   const rgb=s=>(s.match(/[\d.]+/g)||[]).slice(0,3).map(Number),lum=c=>c.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0),ratio=(a,b)=>(Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05),bg=e=>{for(let n=e;n;n=n.parentElement){const c=getComputedStyle(n).backgroundColor;if(!c.endsWith(', 0)')&&c!=='transparent')return rgb(c);}return[255,255,255];};
   const visible=[...document.querySelectorAll('#ui-panel button:not(:disabled)')].filter(e=>e.getBoundingClientRect().width&&e.getBoundingClientRect().height);return visible.map(e=>{const s=getComputedStyle(e);return{id:e.id||e.textContent.trim(),text:ratio(rgb(s.color),bg(e)),border:ratio(rgb(s.borderTopColor),bg(e))};});

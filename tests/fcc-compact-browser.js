@@ -12,6 +12,8 @@ async(page)=>{
  await page.setViewportSize({width:1280,height:800});
  await page.goto(page.__fccUrl||'http://127.0.0.1:8765/FCC.html');
  await page.waitForFunction(()=>window.__compactArgs);
+ await page.locator('#crystal-type-group [data-type=FCC]').click();
+ await page.locator('#btn-reset-pos').click();
  const ax=await page.context().newCDPSession(page);
  const description=async selector=>{
   const root=await ax.send('DOM.getDocument');
@@ -51,10 +53,10 @@ async(page)=>{
  await click('#btn-stereo');
  const stereo=await page.evaluate(()=>({mode:STATE.stereoMode,ortho:STATE.isOrthographic,persp:document.querySelector('#btn-persp').disabled,parallel:document.querySelector('#btn-ortho').disabled,pressed:document.querySelector('#btn-persp').getAttribute('aria-pressed')}));
  const after=await page.locator('#btn-stereo').boundingBox();
- check(await page.locator('#btn-persp').isVisible()&&await page.locator('#btn-ortho').isVisible()&&stereo.persp&&stereo.parallel&&stereo.pressed==='true','stereo shows disabled projection icons with perspective selected',JSON.stringify(stereo));
+ check(await page.locator('#btn-persp').isVisible()&&await page.locator('#btn-ortho').isVisible()&&!stereo.persp&&!stereo.parallel&&stereo.pressed==='true','stereo shows enabled projection icons with perspective selected',JSON.stringify(stereo));
  check(Math.abs(before.width-after.width)<1,'stereo mode does not expand its button',JSON.stringify({before,after}));
  const descriptionsStereo={compare:await description('#fcc-mode [data-value=compare]'),projection:await description('#btn-persp'),strong:await description('#btn-stereo-strong')};
- check(descriptionsStereo.compare.includes('立体視を解除')&&descriptionsStereo.projection.includes('立体視中')&&!descriptionsStereo.strong.includes('立体視を選ぶ'),'accessible descriptions match stereo mode',JSON.stringify(descriptionsStereo));
+ check(descriptionsStereo.compare.includes('立体視を解除')&&!descriptionsStereo.projection.includes('立体視中')&&!descriptionsStereo.strong.includes('立体視を選ぶ'),'accessible descriptions match stereo mode',JSON.stringify(descriptionsStereo));
  await click('#btn-stereo');await click('#btn-stereo');
  check(await page.evaluate(()=>STATE.isOrthographic)&&await page.locator('#btn-ortho').isEnabled(),'stereo restores the previous projection');
  await click('#btn-persp');
@@ -83,14 +85,14 @@ async(page)=>{
   for(const [dx,dy,axis] of [[25,0,[0,-1,0]],[0,25,[-1,0,0]],[-25,0,[0,1,0]],[0,-25,[1,0,0]]]){
    await setPose(roll);const result=await drag(dx,dy);
    const dot=result.axis.reduce((s,v,i)=>s+v*axis[i],0);
-   check(dot>.995&&Math.abs(result.angle-.21)<.012,`cube follows screen axis and slower speed roll=${roll.toFixed(2)} drag=${dx},${dy}`,JSON.stringify({result,dot}));
+   check(dot>.995&&Math.abs(result.angle-.18)<.012,`cube follows screen axis and slower speed roll=${roll.toFixed(2)} drag=${dx},${dy}`,JSON.stringify({result,dot}));
   }
  }
  await click('#crystal-type-group [data-type=NaCl]');await click('#toggle-diagonal');
- const ionDescriptions={diagonal:await description('#toggle-diagonal'),snap:await description('#btn-snap-diagonal'),opacity:await description('#opacity-p-slider')};
- check(!ionDescriptions.diagonal.includes('切り出し')&&!ionDescriptions.snap.includes('オンにする')&&!ionDescriptions.opacity.includes('補助線'),'enabled ion controls have no inapplicable explanation',JSON.stringify(ionDescriptions));
+ const ionDescriptions={diagonal:await description('#toggle-diagonal'),opacity:await description('#opacity-p-slider')};
+ check(!ionDescriptions.diagonal.includes('切り出し')&&!ionDescriptions.opacity.includes('補助線'),'enabled ion controls have no inapplicable explanation',JSON.stringify(ionDescriptions));
  await setPose(Math.PI/2);const sectionDrag=await drag(25,0);
- check(sectionDrag.axis[1]<-.995&&Math.abs(sectionDrag.angle-.21)<.012,'section cube drag also follows screen axes',JSON.stringify(sectionDrag));
+ check(sectionDrag.axis[1]<-.995&&Math.abs(sectionDrag.angle-.18)<.012,'section cube drag also follows screen axes',JSON.stringify(sectionDrag));
  const sectionBefore=await page.evaluate(()=>{
   const c=__compactArgs.getCamera(),controls=__compactArgs.controls,d=c.position.distanceTo(controls.target);
   c.position.copy(controls.target).add(new THREE.Vector3(1,.3,-1).normalize().multiplyScalar(d));
@@ -113,7 +115,7 @@ async(page)=>{
  await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+25,y,id:1}]});
  await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(100);
  const touchDrag=await deltaFrom(touchStart);
- check(touchDrag.axis[1]<-.995&&Math.abs(touchDrag.angle-.21)<.012,'touch dragging the section cube follows the screen axis',JSON.stringify(touchDrag));
+ check(touchDrag.axis[1]<-.995&&Math.abs(touchDrag.angle-.18)<.012,'touch dragging the section cube follows the screen axis',JSON.stringify(touchDrag));
  await touch.send('Emulation.setTouchEmulationEnabled',{enabled:false});await touch.detach();
  check(errors.length===0,'page has no uncaught errors',JSON.stringify(errors));
  if(failures.length)throw Error(JSON.stringify({passed,failures}));

@@ -19,7 +19,7 @@ async(page)=>{
   await page.evaluate(()=>document.querySelector('#btn-reset-pos').click());await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{id:1,x:500,y:380},{id:2,x:600,y:380}]});await page.waitForTimeout(80);
   check(await page.evaluate(()=>STATE.viewOffsetX===0&&STATE.viewOffsetY===0),'reset suppresses old held two-finger screen panning');await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await page.evaluate(()=>{document.querySelector('#crystal-type-group button[data-type="NaCl"]').click();if(!STATE.isClipping)document.querySelector('#toggle-clipping').click();if(!STATE.isDiagonalMode)document.querySelector('#toggle-diagonal').click();});
-  await touch('touchStart',500,400);await touch('touchMove',520,370);await page.waitForTimeout(60);await page.evaluate(()=>document.querySelector('#btn-snap-diagonal').click());
+  await touch('touchStart',500,400);await touch('touchMove',520,370);await page.waitForTimeout(60);await page.locator('#view-cube').click();
   await page.evaluate(async()=>{for(let i=0;i<90;i++)await new Promise(requestAnimationFrame);});const snapped=await pose();await touch('touchMove',650,250);await page.waitForTimeout(80);
   check(same(snapped,await pose()),'completed snap suppresses its old held touch until release');await touch('touchEnd');const beforeFresh=await pose();await touch('touchStart',500,400);await touch('touchMove',550,330);await page.waitForTimeout(80);check(!same(beforeFresh,await pose()),'fresh touch rotates after snap cancellation');await touch('touchEnd');
   await client.detach();if(failures.length)throw new Error('Unmet requirements: '+failures.join('; '));return{checks:results.length,results};

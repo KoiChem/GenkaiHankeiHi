@@ -2,7 +2,7 @@ async(page)=>{
   const checks=[],assert=(ok,message)=>{if(!ok)throw new Error(message);checks.push(message);};
   const panel=async show=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await page.locator('#toggle-panel-btn').click();await page.waitForTimeout(410);}};
   const click=async s=>{await page.locator(s).click();await page.waitForTimeout(70);};
-  await page.setViewportSize({width:1280,height:800});await page.goto('http://127.0.0.1:8765/FCC.html');await page.waitForFunction(()=>window.__fccCameras?.normal);
+  await page.setViewportSize({width:1280,height:800});await page.goto('http://127.0.0.1:8765/FCC.html');await page.locator('#crystal-type-group button[data-type=FCC]').click();await page.locator('#btn-reset-pos').click();await page.waitForFunction(()=>window.__fccCameras?.normal);
   const snapshot=()=>page.evaluate(()=>{const fcc=STATE.type==='FCC',mode=document.querySelector('#fcc-mode button.active').dataset.value,camera=fcc?__fccCameras[mode==='void'?'void':'normal']:__fccArgs.getCamera(),v=STATE.currentCenter.clone().project(camera);return{target:__fccArgs.controls.target.toArray(),center:STATE.currentCenter.toArray(),screen:[v.x,v.y],offset:[STATE.viewOffsetX,STATE.viewOffsetY]};});
   const drag=async(button,dx,dy)=>{await page.mouse.move(490,390);await page.mouse.down({button});await page.mouse.move(490+dx,390+dy,{steps:6});await page.mouse.up({button});await page.waitForTimeout(250);};
   for(const projection of [page.__fccPanProjection||'persp'])for(const grid of [0,1,2])for(const mode of ['normal','void','compare']){

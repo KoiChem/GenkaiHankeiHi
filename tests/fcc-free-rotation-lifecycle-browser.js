@@ -6,10 +6,10 @@ async(page)=>{
   await click('#crystal-type-group button[data-type="NaCl"]');
   if(!await page.locator('#toggle-clipping').evaluate(e=>e.classList.contains('active')))await click('#toggle-clipping');
   if(!await page.locator('#toggle-diagonal').evaluate(e=>e.classList.contains('active')))await click('#toggle-diagonal');
-  await page.evaluate(()=>{const camera=__fccArgs.getCamera();camera.up.set(0,-1,0);camera.lookAt(__fccArgs.controls.target);__fccArgs.controls.update();});
-  await click('#btn-snap-diagonal');
-  const snap=await page.evaluate(async()=>{let previous=__fccArgs.getCamera().quaternion.clone(),max=0;for(let i=0;i<90;i++){await new Promise(requestAnimationFrame);const q=__fccArgs.getCamera().quaternion;max=Math.max(max,previous.angleTo(q));previous.copy(q);}return{max,up:__fccArgs.getCamera().up.toArray(),enabled:__fccArgs.controls.enabled};});
-  check(snap.max<.25&&snap.up.every((v,i)=>Math.abs(v-[0,1,0][i])<1e-8)&&snap.enabled,'diagonal snap from inverted up is continuous and ends upright');
+  await page.evaluate(()=>{const camera=__fccArgs.getCamera(),target=__fccArgs.controls.target,d=camera.position.distanceTo(target);camera.position.copy(target).add(new THREE.Vector3(1,.3,-1).normalize().multiplyScalar(d));camera.up.set(0,-1,0);__fccArgs.controls.update();});
+  await page.waitForTimeout(100);await click('#view-cube');
+  const snap=await page.evaluate(async()=>{let previous=__fccArgs.getCamera().quaternion.clone(),max=0;for(let i=0;i<90;i++){await new Promise(requestAnimationFrame);const q=__fccArgs.getCamera().quaternion;max=Math.max(max,previous.angleTo(q));previous.copy(q);}return{max,up:__fccArgs.getCamera().up.toArray(),enabled:__fccArgs.controls.enabled,dot:__fccArgs.getCamera().position.clone().sub(__fccArgs.controls.target).normalize().dot(new THREE.Vector3(1,0,-1).normalize())};});
+  check(snap.max<.5&&snap.up.every((v,i)=>Math.abs(v-[0,1,0][i])<1e-8)&&snap.enabled&&snap.dot>.9999,'section cube snap from inverted up is continuous and ends upright');
   await click('#crystal-type-group button[data-type="FCC"]');await click('#fcc-mode button[data-value="compare"]');await page.waitForFunction(()=>document.querySelector('#fcc-loading').hidden);await panel(false);
   await page.mouse.move(460,450);await page.mouse.down();await page.mouse.move(510,300,{steps:6});
   await page.evaluate(()=>document.querySelector('#btn-reset-pos').click());await page.mouse.up();

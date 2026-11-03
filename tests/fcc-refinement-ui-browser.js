@@ -2,7 +2,7 @@ async(page)=>{
   const checks=[],assert=(ok,m)=>{if(!ok)throw new Error(m);checks.push(m);};
   const click=async s=>{await page.locator(s).click();await page.waitForTimeout(100);};
   const panel=async show=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await page.locator('#toggle-panel-btn').click();await page.waitForTimeout(450);}};
-  await page.setViewportSize({width:1280,height:800});await page.goto('http://127.0.0.1:8765/FCC.html');await page.waitForFunction(()=>window.__fccCameras?.normal);
+  await page.setViewportSize({width:1280,height:800});await page.goto('http://127.0.0.1:8765/FCC.html');await page.locator('#crystal-type-group button[data-type=FCC]').click();await page.locator('#btn-reset-pos').click();await page.waitForFunction(()=>window.__fccCameras?.normal);
   for(const selector of ['#grid-mode-group button[data-mode="1"]','#toggle-clipping']){
     const button=page.locator(selector);await button.focus();await page.keyboard.press('Space');await page.keyboard.press('Enter');assert(await button.evaluate(e=>document.activeElement===e),'repeated keyboard activation keeps focus on '+selector);
   }

@@ -109,17 +109,16 @@
         #ui-panel button:hover:not(:disabled) { background:#edf4fb; border-color:#245b8c; }
         #ui-panel button.active,#ui-panel .type-btns button.active,#ui-panel .bg-btns button.active { color:#173b61 !important; background:#dceafb !important; border-color:#406b96 !important; box-shadow:inset 0 0 0 1px #406b96; font-weight:700; }
         #ui-panel button:disabled,#ui-panel button.disabled { color:#5a6875 !important; background:#edf1f5 !important; border-color:#a9b4bf !important; box-shadow:none; opacity:1; filter:none; cursor:default; pointer-events:auto; }
-        #ui-panel #btn-persp:disabled.active { color:#445b71 !important; background:#d9e5f0 !important; border-color:#758b9f !important; box-shadow:inset 0 0 0 1px #758b9f; }
         #ui-panel .type-btns button { background:#edf5fc; border:2px solid #64829c; font-weight:700; }
         #ui-panel button:focus-visible,#ui-panel input:focus-visible,#toggle-panel-btn:focus-visible { outline:2px solid #151515; outline-offset:3px; box-shadow:0 0 0 3px #ffe18a; }
         #toggle-panel-btn { min-height:44px; background:#245b8c; box-shadow:0 3px 8px #173b6126; }
-        .cam-btn-container { width:100%; gap:8px; height:auto; padding:0; background:transparent; align-items:stretch; margin-bottom:10px; }
+        .cam-btn-container { width:100%; gap:8px; height:auto; padding:0; background:transparent; align-items:center; margin-bottom:10px; }
         #ui-panel .cam-btn { flex-direction:column; gap:3px; font-size:12px; }
         #ui-panel .cam-btn svg { width:18px; height:18px; }
-        .stereo-control { display:flex; gap:6px; padding:0; border:0; background:transparent; flex:1.6; }
+        .stereo-control { display:flex; gap:6px; padding:0 4px; border:1px solid #8094a8; border-radius:9px; background:#edf4fb; flex:1; min-width:0; }
         #ui-panel #btn-stereo { flex:1; min-width:56px; }
         #ui-panel #btn-stereo-strong { flex:0 0 40px; padding:4px; }
-        #ui-panel #btn-persp,#ui-panel #btn-ortho { flex:1; }
+        #ui-panel #btn-persp,#ui-panel #btn-ortho { flex:0 0 44px; }
         .context-reason { display:none !important; }
         .full-row { grid-column:1/-1; margin:0; }
         #fcc-controls .btn-group { height:auto; }
@@ -127,6 +126,8 @@
         .mini-btn-group { gap:6px; height:auto; min-height:40px; }
         #ui-panel .mini-btn-group button { flex-direction:column; gap:1px; padding:4px; font-size:11px; min-width:40px; }
         #ui-panel .mini-btn-group svg { width:20px; height:20px; }
+        #ui-panel .mini-btn-group button[data-mode="1"],#ui-panel .mini-btn-group button[data-mode="2"] { padding:3px; }
+        #ui-panel .mini-btn-group button[data-mode="1"] svg,#ui-panel .mini-btn-group button[data-mode="2"] svg { width:32px; height:32px; }
         #ui-panel #toggle-ratio-pin { width:58px; height:40px; flex-shrink:0; font-size:12px; }
         #ui-panel .toggle-btn { height:40px; }
         .control-grid { gap:8px; }
@@ -136,6 +137,13 @@
         #ui-panel input[type=range] { min-width:0; height:44px; accent-color:#245b8c; }
         #ui-panel input[type=range]::-webkit-slider-runnable-track { background:#70849a; }
         #ui-panel input[type=range]::-webkit-slider-thumb { background:#245b8c; border:2px solid #fff; box-shadow:0 0 0 1px #245b8c; }
+        #ui-panel #legacy-opacity .opacity-label { width:60px; }
+        #ui-panel #opacity-p-slider::-webkit-slider-thumb { background:#ffb6c1; box-shadow:0 0 0 1px #875762; }
+        #ui-panel #opacity-m-slider::-webkit-slider-thumb { background:#add8e6; box-shadow:0 0 0 1px #416d7b; }
+        #ui-panel #opacity-p-slider::-moz-range-thumb { background:#ffb6c1; border:2px solid #fff; box-shadow:0 0 0 1px #875762; }
+        #ui-panel #opacity-m-slider::-moz-range-thumb { background:#add8e6; border:2px solid #fff; box-shadow:0 0 0 1px #416d7b; }
+        #ui-panel #legacy-opacity input:disabled::-webkit-slider-thumb { background:#a9b4bf; box-shadow:0 0 0 1px #6b8198; }
+        #ui-panel #legacy-opacity input:disabled::-moz-range-thumb { background:#a9b4bf; box-shadow:0 0 0 1px #6b8198; }
         #ui-panel .stable { color:#26643d; } #ui-panel .unstable { color:#9f2424; }
         #ui-panel .bg-btns button { background:#fff !important; color:#254560 !important; border:1px solid #6b8198 !important; }
         #ui-panel .bg-btns button::before { content:''; width:12px; height:12px; border:1px solid #526b81; border-radius:3px; margin-right:5px; }
@@ -151,7 +159,7 @@
     <script src="fcc-geometry.js"></script>
     <script src="fcc-view.js?v=20261103-compact-panel"></script>
     <script src="model-views.js?v=20261102-panel"></script>
-    <script src="view-cube.js?v=20261103-screen-drag"></script>
+    <script src="view-cube.js?v=20261103-view-controls"></script>
 </head>
 <body>
 
@@ -166,7 +174,7 @@
 
     <section class="view-section" aria-label="視点・立体視">
         <div class="cam-btn-container">
-            <button id="btn-persp" class="cam-btn active" title="透視投影 (パースあり)" aria-label="透視投影" aria-describedby="projection-reason">
+            <button id="btn-persp" class="cam-btn active" title="透視投影 (パースあり)" aria-label="透視投影">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="5" width="18" height="14" rx="1"></rect>
                     <rect x="8" y="9" width="8" height="6" rx="1"></rect>
@@ -176,19 +184,18 @@
                     <line x1="21" y1="19" x2="16" y2="15"></line>
                 </svg>
             </button>
-            <button id="btn-ortho" class="cam-btn" title="平行投影 (パースなし)" aria-label="平行投影" aria-describedby="projection-reason">
+            <button id="btn-ortho" class="cam-btn" title="平行投影 (パースなし)" aria-label="平行投影">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                     <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                     <line x1="12" y1="22.08" x2="12" y2="12"></line>
                 </svg>
             </button>
-            <div class="stereo-control">
+            <div class="stereo-control" role="group" aria-label="立体視">
             <button id="btn-stereo" class="cam-btn" title="立体視：通常表示" aria-label="立体視：通常表示" >立体視</button>
                 <button id="btn-stereo-strong" class="cam-btn" aria-label="立体視を強くする" aria-pressed="false" aria-describedby="stereo-strength-reason" disabled>強</button>
             </div>
         </div>
-        <p class="context-reason" id="projection-reason">立体視中は透視投影を使います</p>
         <p class="context-reason" id="stereo-strength-reason">立体視を選ぶと「強」が使えます</p>
     </section>
     <div class="btn-group type-btns" id="crystal-type-group" role="group" aria-label="結晶の種類">
@@ -280,19 +287,18 @@
         <button id="toggle-diagonal" aria-describedby="ion-section-reason" class="toggle-btn" data-prop="isDiagonalMode">対角断面</button>
 
 
-        <button id="btn-snap-diagonal" aria-describedby="ion-section-reason" class="toggle-btn disabled">対角断面正面</button>
-        <p class="context-reason full-row" id="ion-section-reason">対角断面をオンにすると正面表示できます</p>
+        <p class="context-reason full-row" id="ion-section-reason">格子切り出しをオンにすると断面操作が使えます</p>
     </div>
 
     <p class="context-reason" id="ion-opacity-reason" hidden>補助線を消すと不透明度を変更できます</p>
     <div class="control-group" id="legacy-opacity" style="margin-bottom: 12px;">
         <div class="label-text" style="margin-bottom: 4px;"><span>不透明度</span></div>
         <div class="opacity-row" id="opacity-p-row">
-            <span class="opacity-label">陽イオン：<span id="opacity-p-display">70%</span></span>
+            <span class="opacity-label">陽 <span id="opacity-p-display">70%</span></span>
             <input type="range" id="opacity-p-slider" aria-label="陽イオンの不透明度" aria-describedby="ion-opacity-reason" min="0" max="1.0" step="0.01" value="0.70" style="flex: 1;">
         </div>
         <div class="opacity-row" id="opacity-m-row">
-            <span class="opacity-label">陰イオン：<span id="opacity-m-display">60%</span></span>
+            <span class="opacity-label">陰 <span id="opacity-m-display">60%</span></span>
             <input type="range" id="opacity-m-slider" aria-label="陰イオンの不透明度" aria-describedby="ion-opacity-reason" min="0" max="1.0" step="0.01" value="0.60" style="flex: 1;">
         </div>
         <div class="btn-group" style="margin-top:8px"><button id="ion-restore" aria-describedby="ion-restore-reason">全イオンを再表示</button></div>
@@ -405,15 +411,8 @@
         const modelTouchIds = new Set();
         let suppressModelTouches = false, modelMouseDown = false;
 
-        let isAnimatingCamera = false;
         let rotationGlide = false;
         let views, stereoWasOrtho = false;
-        let cameraAnimProgress = 0;
-        let startCamPos = new THREE.Vector3(), endCamPos = new THREE.Vector3();
-        let startTarget = new THREE.Vector3(), endTarget = new THREE.Vector3();
-        const endUp = new THREE.Vector3(0, 1, 0);
-        let startZoom = 1, endZoom = 1;
-        const startCamQuaternion = new THREE.Quaternion(), endCamQuaternion = new THREE.Quaternion();
 
         const DOM = {
             panel: document.getElementById('ui-panel'),
@@ -430,7 +429,6 @@
             opacityMRow: document.getElementById('opacity-m-row'),
             clippingBtn: document.getElementById('toggle-clipping'),
             diagonalBtn: document.getElementById('toggle-diagonal'),
-            snapDiagonalBtn: document.getElementById('btn-snap-diagonal'),
             btnPersp: document.getElementById('btn-persp'),
             btnOrtho: document.getElementById('btn-ortho')
         };
@@ -541,7 +539,6 @@
 
         const stopCameraMotion = () => {
             rotationGlide = false;
-            isAnimatingCamera = false;
             controls.enabled = true;
             // Flush queued deltas once, then clear Trackball's active input state
             // without moving the current pose back to constructor defaults.
@@ -627,11 +624,6 @@
 
         function syncPanelUI() {
             const stereo = STATE.stereoMode !== 'off';
-            DOM.btnPersp.disabled = stereo;
-            DOM.btnOrtho.disabled = stereo;
-            document.getElementById('projection-reason').hidden = !stereo;
-            describeControl(DOM.btnPersp,'projection-reason',stereo);
-            describeControl(DOM.btnOrtho,'projection-reason',stereo);
             const strong = document.getElementById('btn-stereo-strong');
             strong.disabled = !stereo;
             strong.classList.toggle('active',STATE.stereoStrong);
@@ -646,12 +638,9 @@
             reason.hidden = hidden && !(STATE.opacityP===0 || STATE.opacityM===0);
             describeControl(restore,'ion-restore-reason',!reason.hidden);
             DOM.diagonalBtn.disabled = !STATE.isClipping;
-            DOM.snapDiagonalBtn.disabled = !STATE.isClipping || !STATE.isDiagonalMode;
             const sectionReason = document.getElementById('ion-section-reason');
-            sectionReason.textContent = !STATE.isClipping ? '格子切り出しをオンにすると断面操作が使えます' : '対角断面をオンにすると正面表示できます';
-            sectionReason.hidden = !DOM.snapDiagonalBtn.disabled;
+            sectionReason.hidden = !DOM.diagonalBtn.disabled;
             describeControl(DOM.diagonalBtn,'ion-section-reason',DOM.diagonalBtn.disabled);
-            describeControl(DOM.snapDiagonalBtn,'ion-section-reason',DOM.snapDiagonalBtn.disabled);
             const opacityReason = document.getElementById('ion-opacity-reason');
             opacityReason.hidden = STATE.type==='FCC' || !STATE.isOpacityForced;
             describeControl(DOM.opacityPSlider,'ion-opacity-reason',!opacityReason.hidden);
@@ -665,11 +654,11 @@
             document.getElementById('fcc-controls').hidden = !isFCC;
             document.getElementById('legacy-ratio').hidden = isFCC;
             document.getElementById('legacy-opacity').hidden = isFCC;
-            ['toggle-size-mode','toggle-avoid-overlap','toggle-diagonal','btn-snap-diagonal'].forEach(id => document.getElementById(id).hidden = isFCC);
+            ['toggle-size-mode','toggle-avoid-overlap','toggle-diagonal'].forEach(id => document.getElementById(id).hidden = isFCC);
             controls.noPan = true;
             document.getElementById('legacy-actions').hidden = isFCC;
             document.getElementById('legacy-grid-controls').hidden = isFCC;
-            if (isFCC) { isAnimatingCamera = false; controls.enabled = true; fcc.update(); return; }
+            if (isFCC) { controls.enabled = true; fcc.update(); return; }
             fcc.deactivate();
             ionSites = [];
             while(atomsGroup.children.length > 0){ disposeHierarchy(atomsGroup.children[0]); }
@@ -696,7 +685,7 @@
             if (STATE.currentCenter.lengthSq() === 0) {
                 STATE.currentCenter.copy(newCenter);
                 controls.target.copy(newCenter);
-            } else if (!isAnimatingCamera) {
+            } else {
                 const shift = newCenter.clone().sub(STATE.currentCenter);
                 if(shift.lengthSq()>1e-10)fcc.viewChanged();
                 controls.target.copy(newCenter);
@@ -972,82 +961,25 @@
             updateScene();
         };
 
-        const triggerCameraSnap = () => {
-            stopCameraMotion();
-            const a = calculateRealA(STATE.type, STATE.ratio, STATE.rMinus, STATE.isAvoidOverlap);
-            const draw_a = STATE.isFixedBoxMode ? STATE.savedFixedA : a;
-
-            const multX = STATE.gridMode > 0 ? 2 : 1;
-            const multY = STATE.gridMode === 2 ? 2 : 1;
-            const multZ = STATE.gridMode > 0 ? 2 : 1;
-            const span = Math.max(multX, multZ);
-
-            const center = new THREE.Vector3(draw_a * multX / 2, draw_a * multY / 2, draw_a * multZ / 2);
-            const normal = new THREE.Vector3(1, 0, -1).normalize();
-
-            startCamPos.copy(activeCamera.position);
-            startTarget.copy(controls.target);
-            startCamQuaternion.copy(activeCamera.quaternion);
-
-            endTarget.copy(center);
-            const aspect = window.innerWidth / window.innerHeight;
-            const distMulti = aspect < 1 ? (2.2 / aspect) * 0.9 : 2.2;
-            endCamPos.copy(center).add(normal.multiplyScalar(draw_a * span * distMulti));
-
-            if (STATE.isOrthographic) {
-                startZoom = cameraO.zoom;
-                const targetDist = draw_a * span * distMulti;
-                const target_vH = 2 * targetDist * Math.tan(THREE.MathUtils.degToRad(cameraP.fov / 2));
-                const base_vH = cameraO.top - cameraO.bottom;
-                endZoom = base_vH / target_vH;
-            }
-
-            const endView = activeCamera.clone();
-            endView.position.copy(endCamPos);
-            endView.up.copy(endUp);
-            endView.lookAt(endTarget);
-            endCamQuaternion.copy(endView.quaternion);
-            isAnimatingCamera = true;
-            controls.enabled = false;
-            cameraAnimProgress = 0;
-        };
-
         const registerEvents = () => {
             const setPanelVisible = (visible) => {
                 visible ? DOM.panel.classList.remove('hidden') : DOM.panel.classList.add('hidden');
                 DOM.togglePanelBtn.innerHTML = visible ? '✕ 設定を閉じる' : '≡ 設定を表示';
             };
 
-            DOM.btnPersp.onclick = () => {
-                if (views.stereo()) return;
-                if(!STATE.isOrthographic) return;
-                STATE.isOrthographic = false;
-                DOM.btnOrtho.classList.remove('active');
-                DOM.btnPersp.classList.add('active');
-                syncCameras(false);
-                syncPanelUI();
-            };
-            DOM.btnOrtho.onclick = () => {
-                if (views.stereo()) return;
-                if(STATE.isOrthographic) return;
-                STATE.isOrthographic = true;
-                DOM.btnPersp.classList.remove('active');
-                DOM.btnOrtho.classList.add('active');
-                syncCameras(true);
-                syncPanelUI();
-            };
-
-            document.getElementById('btn-stereo').onclick = () => {
+            const setStereoMode = (next, exitProjection) => {
                 stopCameraMotion();
                 const old = STATE.stereoMode;
-                const next = old === 'off' ? 'cross' : old === 'cross' ? 'parallel' : 'off';
                 if (old === 'off') {
                     stereoWasOrtho = STATE.isOrthographic;
                     if (stereoWasOrtho) { STATE.isOrthographic = false; syncCameras(false); }
                 }
                 STATE.stereoMode = next;
                 fcc.setStereo(next !== 'off');
-                if (next === 'off' && stereoWasOrtho) { STATE.isOrthographic = true; syncCameras(true); }
+                if (next === 'off') {
+                    const useOrtho = exitProjection === undefined ? stereoWasOrtho : exitProjection;
+                    if (STATE.isOrthographic !== useOrtho) { STATE.isOrthographic = useOrtho; syncCameras(useOrtho); }
+                }
                 DOM.btnPersp.classList.toggle('active', !STATE.isOrthographic);
                 DOM.btnOrtho.classList.toggle('active', STATE.isOrthographic);
                 const label = next === 'off' ? '立体視' : next === 'cross' ? '交差法' : '平行法';
@@ -1056,6 +988,22 @@
                 button.setAttribute('aria-label',button.title); button.setAttribute('aria-pressed',String(next !== 'off'));
                 button.classList.toggle('active', next !== 'off');
                 syncPanelUI();
+            };
+
+            const chooseProjection = useOrtho => {
+                if (views.stereo()) { setStereoMode('off',useOrtho); return; }
+                if (STATE.isOrthographic === useOrtho) return;
+                STATE.isOrthographic = useOrtho;
+                DOM.btnPersp.classList.toggle('active',!useOrtho);
+                DOM.btnOrtho.classList.toggle('active',useOrtho);
+                syncCameras(useOrtho);
+                syncPanelUI();
+            };
+            DOM.btnPersp.onclick = () => chooseProjection(false);
+            DOM.btnOrtho.onclick = () => chooseProjection(true);
+            document.getElementById('btn-stereo').onclick = () => {
+                const old = STATE.stereoMode;
+                setStereoMode(old === 'off' ? 'cross' : old === 'cross' ? 'parallel' : 'off');
             };
 
             document.getElementById('btn-stereo-strong').onclick = () => {
@@ -1100,11 +1048,6 @@
 
                         checkOpacityForceState();
 
-                        if (STATE.isDiagonalMode) {
-                            DOM.snapDiagonalBtn.classList.remove('disabled');
-                        } else {
-                            DOM.snapDiagonalBtn.classList.add('disabled');
-                        }
                     } else {
                         STATE[prop] = !STATE[prop];
                         e.target.classList.toggle('active', STATE[prop]);
@@ -1119,18 +1062,11 @@
                             STATE.isDiagonalMode = false;
                             DOM.diagonalBtn.classList.remove('active');
                             checkOpacityForceState();
-                            DOM.snapDiagonalBtn.classList.add('disabled');
                         }
                     }
                     updateScene();
                 });
             });
-
-            DOM.snapDiagonalBtn.onclick = () => {
-                if (STATE.isDiagonalMode) {
-                    triggerCameraSnap();
-                }
-            };
 
             DOM.ratioPinBtn.onclick = (e) => {
                 STATE.isRatioPinned = !STATE.isRatioPinned;
@@ -1290,26 +1226,6 @@
             requestAnimationFrame(animate);
             if (STATE.type === 'FCC') { controls.update(); fcc.render(activeCamera, scene.background); return; }
 
-            if (isAnimatingCamera) {
-                cameraAnimProgress += 0.016;
-                if (cameraAnimProgress >= 1) {
-                    cameraAnimProgress = 1;
-                    isAnimatingCamera = false;
-                    controls.enabled = true;
-                }
-                const ease = 1 - Math.pow(1 - cameraAnimProgress, 3);
-                controls.target.lerpVectors(startTarget, endTarget, ease);
-                activeCamera.quaternion.slerpQuaternions(startCamQuaternion, endCamQuaternion, ease);
-                const distance = THREE.MathUtils.lerp(startCamPos.distanceTo(startTarget), endCamPos.distanceTo(endTarget), ease);
-                activeCamera.position.set(0, 0, distance).applyQuaternion(activeCamera.quaternion).add(controls.target);
-                activeCamera.up.set(0, 1, 0).applyQuaternion(activeCamera.quaternion);
-
-                if (STATE.isOrthographic) {
-                    activeCamera.zoom = THREE.MathUtils.lerp(startZoom, endZoom, ease);
-                }
-                activeCamera.updateProjectionMatrix();
-            }
-
             if (STATE.auxLinesState > 0 && surfaceLinesGroup) {
                 let camDir = new THREE.Vector3();
                 activeCamera.getWorldDirection(camDir);
@@ -1379,8 +1295,7 @@
         STATE.savedFixedA = calculateRealA(STATE.type, STATE.ratio, STATE.rMinus, STATE.isAvoidOverlap);
         DOM.ratioSlider.value = CONFIG.ratioMap.toSlider(STATE.ratio);
 
-        STATE.type = 'FCC';
-        document.querySelectorAll('.type-btns button').forEach(b => b.classList.toggle('active', b.dataset.type === 'FCC'));
+        document.querySelectorAll('.type-btns button').forEach(b => b.classList.toggle('active', b.dataset.type === STATE.type));
         updateScene();
         fcc.reset();
         animate();
