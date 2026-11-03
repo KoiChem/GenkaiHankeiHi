@@ -6,7 +6,7 @@ function createModelViews({ THREE, state, getTarget }) {
     function resetLayout() {
         const panel = document.getElementById('ui-panel');
         const rect = panel.getBoundingClientRect();
-        // Match the panel's sidebar media rules, not its transient animated bounds.
+        // Shift for desktop and short landscape layouts; portrait phones stay centered.
         const sidebarLayout = innerWidth >= 600 || innerHeight <= 540;
         const transform = new DOMMatrixReadOnly(getComputedStyle(panel).transform);
         const layoutLeft = rect.left - transform.m41;
