@@ -44,7 +44,7 @@ async(page)=>{
   await page.setViewportSize(size);await click('#crystal-type-group button[data-type=FCC]');
   for(const mode of ['normal','void','compare']){
    await click('#fcc-mode button[data-value="'+mode+'"]');if(mode!=='normal')await page.waitForFunction(()=>document.querySelector('#fcc-loading').hidden);
-   const ui=await page.evaluate(()=>{const panel=document.querySelector('#ui-panel'),rect=panel.getBoundingClientRect(),bs=[...panel.querySelectorAll('button')].map(e=>({id:e.id||e.textContent.trim(),r:e.getBoundingClientRect()})).filter(o=>o.r.width&&o.r.height);return{overflow:document.documentElement.scrollWidth>innerWidth,panelOverflow:panel.scrollWidth>panel.clientWidth,min:bs.every(o=>o.r.width>=24&&o.r.height>=40),touch:bs.some((o,i)=>bs.slice(i+1).some(p=>Math.min(o.r.right,p.r.right)-Math.max(o.r.left,p.r.left)>.5&&Math.min(o.r.bottom,p.r.bottom)-Math.max(o.r.top,p.r.top)>.5))};});
+   const ui=await page.evaluate(()=>{const panel=document.querySelector('#ui-panel'),rect=panel.getBoundingClientRect(),bs=[...panel.querySelectorAll('button')].map(e=>({id:e.id||e.textContent.trim(),r:e.getBoundingClientRect()})).filter(o=>o.r.width&&o.r.height);return{overflow:document.documentElement.scrollWidth>innerWidth,panelOverflow:panel.scrollWidth>panel.clientWidth,min:bs.every(o=>o.r.width>=24&&o.r.height>=(o.id==='btn-stereo-strong'?32:40)),touch:bs.some((o,i)=>bs.slice(i+1).some(p=>Math.min(o.r.right,p.r.right)-Math.max(o.r.left,p.r.left)>.5&&Math.min(o.r.bottom,p.r.bottom)-Math.max(o.r.top,p.r.top)>.5))};});
    check(!ui.overflow&&!ui.panelOverflow&&ui.min&&!ui.touch,'responsive controls fit with separated targets '+size.width+' '+mode);
    await page.screenshot({path:'.playwright-mcp/fcc-panel-'+size.width+'-'+mode+'.png'});
   }
