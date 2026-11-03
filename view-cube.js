@@ -1,7 +1,7 @@
 'use strict';
 function createViewCube({THREE,getCamera,controls,state,stopMotion,onChange}) {
  const canvas=document.createElement('canvas');canvas.id='view-cube';canvas.setAttribute('aria-label','視点調整：ドラッグで回転、面・辺・角を選択。矢印キーで上下左右、Enterで正面。対角断面中はDキーで断面正面');canvas.tabIndex=0;
- Object.assign(canvas.style,{position:'fixed',left:'max(8px, env(safe-area-inset-left))',top:'max(8px, env(safe-area-inset-top))',width:'86.4px',height:'86.4px',zIndex:20,touchAction:'none',userSelect:'none',webkitUserSelect:'none',webkitTouchCallout:'none',cursor:'grab'});document.body.append(canvas);
+ Object.assign(canvas.style,{position:'fixed',left:'max(8px, env(safe-area-inset-left))',top:'max(8px, env(safe-area-inset-top))',width:'86.4px',height:'86.4px',zIndex:20,touchAction:'none',userSelect:'none',webkitUserSelect:'none',webkitTouchCallout:'none',webkitTapHighlightColor:'transparent',cursor:'grab'});document.body.append(canvas);
  if(matchMedia('(pointer:coarse)').matches && Math.min(screen.width,screen.height)<600) canvas.style.top='calc(env(safe-area-inset-top, 0px) - 10px)';
  const ctx=canvas.getContext('2d'),V=(x,y,z)=>new THREE.Vector3(x,y,z);let polygons=[],down=null,moved=false,transition=null;
  const faces=()=> state.type!=='FCC'&&state.isClipping&&state.isDiagonalMode ? [
