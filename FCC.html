@@ -151,6 +151,7 @@
     <script src="fcc-geometry.js"></script>
     <script src="fcc-view.js?v=20261102-panel"></script>
     <script src="model-views.js?v=20261102-panel"></script>
+    <script src="view-cube.js?v=20261103"></script>
 </head>
 <body>
 
@@ -201,7 +202,7 @@
 
     <div id="fcc-controls" hidden>
         <h2 class="section-heading">観察方法</h2>
-        <div class="btn-group" id="fcc-mode" role="group" aria-label="観察方法"><button data-value="normal" class="active">通常</button><button data-value="void">間隙</button><button data-value="compare" aria-describedby="fcc-mode-reason">比較表示</button></div>
+        <div class="btn-group" id="fcc-mode" role="group" aria-label="観察方法"><button data-value="normal" class="active">原子</button><button data-value="void">間隙</button><button data-value="compare" aria-describedby="fcc-mode-reason">比較表示</button></div>
         <p class="context-reason" id="fcc-mode-reason" hidden>比較は立体視を解除すると使えます</p>
         <div id="fcc-atom-controls">
             <div id="fcc-palette-controls">
@@ -1277,7 +1278,9 @@
             window.addEventListener('touchcancel', cancelPan);
         };
 
+        let updateViewCube = () => {};
         const animate = () => {
+            updateViewCube();
             requestAnimationFrame(animate);
             if (STATE.type === 'FCC') { controls.update(); fcc.render(activeCamera, scene.background); return; }
 
@@ -1364,6 +1367,7 @@
         initThreeJS();
         views = createModelViews({ THREE, state: STATE, getTarget: () => controls.target });
         fcc = createFCCView({ THREE, renderer, controls, state: STATE, getCamera: () => activeCamera, cameras: [cameraP,cameraO], views, stopMotion: stopCameraMotion, onIonTap: handleIonTap, onViewChange: () => { recentHiddenIon=null; } });
+        updateViewCube = createViewCube({THREE,getCamera:()=>activeCamera,controls,state:STATE,stopMotion:stopCameraMotion,onChange:()=>fcc.viewChanged()});
         registerEvents();
 
         STATE.savedFixedA = calculateRealA(STATE.type, STATE.ratio, STATE.rMinus, STATE.isAvoidOverlap);
