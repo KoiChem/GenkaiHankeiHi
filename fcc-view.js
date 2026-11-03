@@ -4,10 +4,15 @@ function placeScreenLight(light,camera,target) {
     light.target.position.copy(target);
 }
 
+function describeControl(control,reasonId,needed) {
+    if (needed) control.setAttribute('aria-describedby',reasonId);
+    else control.removeAttribute('aria-describedby');
+}
+
 /* Alternate-page FCC controller. Legacy ion rendering and input stay in FCC.html. */
 function createFCCView({ THREE, renderer, controls, state: shared, getCamera, cameras, views, stopMotion, onIonTap, onViewChange }) {
     const G = FCCGeometry, a = 3, baseSites = G.sites();
-    const state = { mode:'normal', beforeCompare:'normal', palette:'sites', kind:'both', display:'both', atom:.85, void:.24, sphere:.9, hidden:new Set(), selected:null };
+    const state = { mode:'normal', beforeCompare:'normal', palette:'sites', kind:'both', display:'both', atom:.85, void:.7, sphere:.6, hidden:new Set(), selected:null };
     const scenes = { normal:new THREE.Scene(), void:new THREE.Scene() };
     const viewLights = new Map();
     for(const scene of Object.values(scenes)) {
@@ -22,7 +27,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     const clips = [new THREE.Plane(new THREE.Vector3(1,0,0),0),new THREE.Plane(new THREE.Vector3(-1,0,0),a),new THREE.Plane(new THREE.Vector3(0,1,0),0),new THREE.Plane(new THREE.Vector3(0,-1,0),a),new THREE.Plane(new THREE.Vector3(0,0,1),0),new THREE.Plane(new THREE.Vector3(0,0,-1),a)];
     const vec=p=>new THREE.Vector3(...p).multiplyScalar(a);
     const color=s=>s.kind==='oct'?0xf2a522:0x9a55d6;
-    const voidColor=s=>s.kind==='oct'?0xf5d78e:0xc7a5de;
+    const voidColor=s=>s.kind==='oct'?0xf0cd80:0xbf99d6;
     const atomGrid=()=>state.mode==='normal'?shared.gridMode:0;
     const atomClipping=()=>state.mode==='compare'||shared.isClipping;
     const enabled=()=>shared.type==='FCC';
@@ -125,11 +130,13 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const compareButton=document.querySelector('#fcc-mode button[data-value="compare"]');
         compareButton.disabled=views.stereo();
         document.getElementById('fcc-mode-reason').hidden=!views.stereo();
+        describeControl(compareButton,'fcc-mode-reason',views.stereo());
         const restoreButton=document.getElementById('fcc-restore');
         restoreButton.disabled=state.hidden.size===0;
         const restoreReason=document.getElementById('fcc-restore-reason');
         restoreReason.textContent=state.hidden.size===0?'非表示の原子はありません':'不透明度0%では原子は見えません';
         restoreReason.hidden=state.hidden.size>0&&state.atom>0;
+        describeControl(restoreButton,'fcc-restore-reason',!restoreReason.hidden);
 
         const grid=document.getElementById('grid-mode-group'),clip=document.getElementById('toggle-clipping');
         if(isFCC){

@@ -5,14 +5,14 @@ async(page)=>{
  const click=async s=>{await page.locator(s).click();await page.waitForTimeout(100);};
  const panel=async show=>{const hidden=await page.locator('#ui-panel').evaluate(e=>e.classList.contains('hidden'));if(hidden===show){await click('#toggle-panel-btn');await page.waitForTimeout(350);}};
  check(await page.locator('#btn-stereo-strong').isDisabled(),'strong stereo is disabled outside stereoscopic view');
- check(await page.locator('#stereo-strength-reason').isVisible(),'disabled strong stereo has a nearby visible reason');
- check(await page.locator('#fcc-restore').isDisabled()&&await page.locator('#fcc-restore-reason').isVisible(),'restore is disabled with an explanation when no atom is hidden');
- check(await page.locator('#btn-reset-pos').evaluate(e=>e.parentElement.id==='panel-utilities'),'reset is available in the first utility row');
+ check(await page.locator('#stereo-strength-reason').isHidden(),'disabled strong stereo has no visible explanation');
+ check(await page.locator('#fcc-restore').isDisabled()&&await page.locator('#fcc-restore-reason').isHidden(),'restore is disabled without a visible explanation when no atom is hidden');
+ check(await page.locator('#btn-reset-pos').evaluate(e=>e.parentElement.id==='common-actions'&&e.nextElementSibling.id==='toggle-quality'),'reset is next to lightweight mode');
  const props=await page.evaluate(()=>{const b=document.querySelector('#btn-stereo'),s=document.querySelector('#btn-stereo-strong');return{same:b.parentElement===s.parentElement,nested:b.contains(s)||s.contains(b)};});check(props.same&&!props.nested,'stereo cycle and strength are sibling buttons inside one frame');
  await page.locator('#btn-stereo').focus();await page.keyboard.press('Space');await page.waitForTimeout(150);
  check(await page.evaluate(()=>STATE.stereoMode==='cross'),'stereo cycle works from the keyboard');
  check(await page.locator('#btn-stereo-strong').isEnabled()&&await page.locator('#stereo-strength-reason').isHidden(),'strong stereo becomes available without an obsolete hint');
- check(await page.locator('#fcc-mode button[data-value=compare]').isDisabled()&&await page.locator('#fcc-mode-reason').isVisible(),'comparison is natively disabled with a visible stereo reason');
+ check(await page.locator('#fcc-mode button[data-value=compare]').isDisabled()&&await page.locator('#fcc-mode-reason').isHidden(),'comparison is disabled without a visible stereo reason');
  await page.locator('#fcc-mode button[data-value=compare]').evaluate(e=>e.click());check(await page.locator('#fcc-mode button[data-value=normal]').getAttribute('aria-pressed')==='true','disabled comparison cannot change the active mode');
  const weak=await page.evaluate(()=>({eye:Math.abs(__frames.at(-1).c.userData.eyeOffset),q:__args.getCamera().quaternion.toArray(),d:__args.getCamera().position.distanceTo(__args.controls.target)}));
  await page.locator('#btn-stereo-strong').focus();await page.keyboard.press('Enter');await page.waitForTimeout(100);
@@ -31,8 +31,8 @@ async(page)=>{
  await click('#btn-persp');await page.locator('#grid-mode-group button[data-mode="1"]').focus();await page.keyboard.press('Space');check(await page.evaluate(()=>document.activeElement===document.querySelector('#grid-mode-group button[data-mode="1"]')),'keyboard grid selection retains focus');
  await click('#fcc-mode button[data-value=compare]');check(await page.locator('#fcc-grid-label').isHidden(),'comparison has no orphaned grid heading');
  await click('#fcc-mode button[data-value=normal]');await click('#grid-mode-group button[data-mode="0"]');await click('#crystal-type-group button[data-type=NaCl]');
- check(await page.locator('#ion-restore').isDisabled()&&await page.locator('#ion-restore-reason').isVisible(),'ion restore is disabled with its current-type explanation');
- await click('#toggle-clipping');check(await page.locator('#toggle-diagonal').isDisabled()&&await page.locator('#btn-snap-diagonal').isDisabled()&&await page.locator('#ion-section-reason').isVisible(),'clipping-off makes unavailable diagonal actions explicit');
+ check(await page.locator('#ion-restore').isDisabled()&&await page.locator('#ion-restore-reason').isHidden(),'ion restore is disabled without a visible explanation');
+ await click('#toggle-clipping');check(await page.locator('#toggle-diagonal').isDisabled()&&await page.locator('#btn-snap-diagonal').isDisabled()&&await page.locator('#ion-section-reason').isHidden(),'clipping-off disables unavailable diagonal actions');
  await click('#toggle-clipping');await click('#toggle-diagonal');check(await page.locator('#btn-snap-diagonal').isEnabled()&&await page.locator('#ion-section-reason').isHidden(),'enabling the diagonal restores its front-view action');
  const contrast=await page.evaluate(()=>{
   const rgb=s=>(s.match(/[\d.]+/g)||[]).slice(0,3).map(Number),lum=c=>c.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0),ratio=(a,b)=>(Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05),bg=e=>{for(let n=e;n;n=n.parentElement){const c=getComputedStyle(n).backgroundColor;if(!c.endsWith(', 0)')&&c!=='transparent')return rgb(c);}return[255,255,255];};

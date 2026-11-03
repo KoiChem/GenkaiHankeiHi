@@ -19,7 +19,7 @@ async(page)=>{
  await panel(true);await click('#btn-reset-pos');const reset=await pose();await page.waitForTimeout(400);check(angle(reset,await pose())<1e-6,'reset clears remaining rotation');
  await click('#btn-ortho');await click('#btn-stereo');
  check(await page.evaluate(()=>STATE.stereoMode==='cross'&&!STATE.isOrthographic),'stereo enters cross mode with perspective');
- check(await page.locator('#btn-ortho').isHidden()&&await page.locator('#btn-persp').isHidden(),'stereo hides projection controls');
+ check(await page.locator('#btn-ortho').isVisible()&&await page.locator('#btn-persp').isVisible()&&await page.locator('#btn-ortho').isDisabled()&&await page.locator('#btn-persp').isDisabled(),'stereo keeps projection controls visible and disabled');
  let optics=await page.evaluate(()=>{const cs=__frames.slice(-2).map(v=>v.c),target=__args.controls.target,p=target.clone().add(new THREE.Vector3(.3,.4,.7));return{eyes:cs.map(c=>c.userData.eyeOffset),center:cs.map(c=>target.clone().project(c).toArray()),point:cs.map(c=>p.clone().project(c).toArray())};});
  check(optics.eyes[0]>0&&optics.eyes[1]<0,'cross method reverses eye assignment');
  check(optics.center.every(v=>Math.abs(v[0])<1e-7&&Math.abs(v[1])<1e-7),'both stereo focus planes center without panel offsets');

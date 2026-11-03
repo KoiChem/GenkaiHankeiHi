@@ -101,36 +101,36 @@
         #fcc-loading { position: fixed; left: 16px; bottom: 16px; z-index: 5; color: #555; font-size: 12px; background: rgba(255,255,255,.9); padding: 6px 10px; border-radius: 8px; }
         @media (max-height: 540px) { #ui-panel { top: 66px; bottom: auto; max-height: calc(100dvh - 100px); padding: 12px; width: 290px; left: auto; right: 12px; transform: none; } #ui-panel.hidden { transform: translateX(350px); } }
 
-        :root { --primary:#245b8c; --panel-bg:#f8fbff; --btn-height:44px; }
+        :root { --primary:#245b8c; --panel-bg:#f8fbff; --btn-height:40px; }
         #ui-panel { width:340px; padding:16px; box-sizing:border-box; border:1px solid #8094a8; max-height:calc(100dvh - 90px); color:#20364b; background:#f8fbff; }
-        .section-heading { margin:16px 0 8px; font-size:14px; line-height:1.4; font-weight:700; color:#244663; }
-        .view-section .section-heading { margin-top:10px; }
         .label-text { color:#43566a; font-size:12px; line-height:1.4; margin-bottom:6px; }
-        #ui-panel .btn-group { height:auto; min-height:44px; gap:8px; margin-bottom:10px; }
-        #ui-panel button { min-height:44px; padding:6px 8px; color:#254560; background:#fff; border:1px solid #6b8198; border-radius:8px; font-size:13px; line-height:1.3; font-weight:600; box-shadow:none; transition:background-color .15s,border-color .15s; }
+        #ui-panel .btn-group { height:auto; min-height:40px; gap:8px; margin-bottom:10px; }
+        #ui-panel button { height:40px; min-height:40px; padding:6px 8px; color:#254560; background:#fff; border:1px solid #6b8198; border-radius:8px; font-size:13px; line-height:1.3; font-weight:600; box-shadow:none; transition:background-color .15s; }
         #ui-panel button:hover:not(:disabled) { background:#edf4fb; border-color:#245b8c; }
         #ui-panel button.active,#ui-panel .type-btns button.active,#ui-panel .bg-btns button.active { color:#173b61 !important; background:#dceafb !important; border-color:#406b96 !important; box-shadow:inset 0 0 0 1px #406b96; font-weight:700; }
         #ui-panel button:disabled,#ui-panel button.disabled { color:#5a6875 !important; background:#edf1f5 !important; border-color:#a9b4bf !important; box-shadow:none; opacity:1; filter:none; cursor:default; pointer-events:auto; }
+        #ui-panel #btn-persp:disabled.active { color:#445b71 !important; background:#d9e5f0 !important; border-color:#758b9f !important; box-shadow:inset 0 0 0 1px #758b9f; }
+        #ui-panel .type-btns button { background:#edf5fc; border:2px solid #64829c; font-weight:700; }
         #ui-panel button:focus-visible,#ui-panel input:focus-visible,#toggle-panel-btn:focus-visible { outline:2px solid #151515; outline-offset:3px; box-shadow:0 0 0 3px #ffe18a; }
         #toggle-panel-btn { min-height:44px; background:#245b8c; box-shadow:0 3px 8px #173b6126; }
-        .cam-btn-container { width:100%; gap:8px; height:auto; padding:0; background:transparent; align-items:stretch; }
+        .cam-btn-container { width:100%; gap:8px; height:auto; padding:0; background:transparent; align-items:stretch; margin-bottom:10px; }
         #ui-panel .cam-btn { flex-direction:column; gap:3px; font-size:12px; }
         #ui-panel .cam-btn svg { width:18px; height:18px; }
-        .stereo-control { display:flex; gap:4px; padding:4px; border:1px solid #6b8198; border-radius:10px; background:#edf4fb; flex:1.6; }
+        .stereo-control { display:flex; gap:6px; padding:0; border:0; background:transparent; flex:1.6; }
         #ui-panel #btn-stereo { flex:1; min-width:56px; }
         #ui-panel #btn-stereo-strong { flex:0 0 40px; padding:4px; }
         #ui-panel #btn-persp,#ui-panel #btn-ortho { flex:1; }
-        .context-reason { color:#43566a; font-size:12px; line-height:1.5; margin:4px 0 10px; }
+        .context-reason { display:none !important; }
         .full-row { grid-column:1/-1; margin:0; }
         #fcc-controls .btn-group { height:auto; }
         #fcc-grid-row { grid-template-columns:1.2fr 1fr; gap:8px; }
-        .mini-btn-group { gap:6px; height:auto; min-height:48px; }
+        .mini-btn-group { gap:6px; height:auto; min-height:40px; }
         #ui-panel .mini-btn-group button { flex-direction:column; gap:1px; padding:4px; font-size:11px; min-width:40px; }
         #ui-panel .mini-btn-group svg { width:20px; height:20px; }
-        #ui-panel #toggle-ratio-pin { width:58px; height:44px; flex-shrink:0; font-size:12px; }
-        #ui-panel .toggle-btn { height:auto; }
+        #ui-panel #toggle-ratio-pin { width:58px; height:40px; flex-shrink:0; font-size:12px; }
+        #ui-panel .toggle-btn { height:40px; }
         .control-grid { gap:8px; }
-        #common-actions { grid-template-columns:1fr; }
+        #common-actions { grid-template-columns:1fr 1fr; }
         .opacity-row { min-height:44px; gap:8px; margin-bottom:0; }
         #ui-panel .opacity-label,#fcc-controls .opacity-label { color:#20364b; width:100px; font-size:12px; flex-shrink:0; }
         #ui-panel input[type=range] { min-width:0; height:44px; accent-color:#245b8c; }
@@ -149,9 +149,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
     <script src="fcc-geometry.js"></script>
-    <script src="fcc-view.js?v=20261102-panel"></script>
+    <script src="fcc-view.js?v=20261103-compact-panel"></script>
     <script src="model-views.js?v=20261102-panel"></script>
-    <script src="view-cube.js?v=20261103-compact"></script>
+    <script src="view-cube.js?v=20261103-screen-drag"></script>
 </head>
 <body>
 
@@ -159,16 +159,14 @@
 
 <div id="ui-panel">
     <div class="btn-group" id="panel-utilities">
-        <button id="btn-reset-pos" class="toggle-btn" aria-label="模型の位置・向き・ズームをリセット" title="模型の位置・向き・ズームをリセット">位置を戻す</button>
         <button id="toggle-fullscreen" class="toggle-btn">全画面</button>
         <button id="toggle-pin" class="toggle-btn active" style="border-width: 1.5px;">パネル固定</button>
 
     </div>
 
-    <section class="view-section" aria-labelledby="view-heading">
-        <h2 class="section-heading" id="view-heading">視点・立体視</h2>
+    <section class="view-section" aria-label="視点・立体視">
         <div class="cam-btn-container">
-            <button id="btn-persp" class="cam-btn active" title="透視投影 (パースあり)">
+            <button id="btn-persp" class="cam-btn active" title="透視投影 (パースあり)" aria-label="透視投影" aria-describedby="projection-reason">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="5" width="18" height="14" rx="1"></rect>
                     <rect x="8" y="9" width="8" height="6" rx="1"></rect>
@@ -176,23 +174,23 @@
                     <line x1="21" y1="5" x2="16" y2="9"></line>
                     <line x1="3" y1="19" x2="8" y2="15"></line>
                     <line x1="21" y1="19" x2="16" y2="15"></line>
-                </svg><span>透視</span>
+                </svg>
             </button>
-            <button id="btn-ortho" class="cam-btn" title="平行投影 (パースなし)">
+            <button id="btn-ortho" class="cam-btn" title="平行投影 (パースなし)" aria-label="平行投影" aria-describedby="projection-reason">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                     <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                     <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                </svg><span>平行投影</span>
+                </svg>
             </button>
             <div class="stereo-control">
             <button id="btn-stereo" class="cam-btn" title="立体視：通常表示" aria-label="立体視：通常表示" >立体視</button>
                 <button id="btn-stereo-strong" class="cam-btn" aria-label="立体視を強くする" aria-pressed="false" aria-describedby="stereo-strength-reason" disabled>強</button>
             </div>
         </div>
+        <p class="context-reason" id="projection-reason">立体視中は透視投影を使います</p>
         <p class="context-reason" id="stereo-strength-reason">立体視を選ぶと「強」が使えます</p>
     </section>
-    <h2 class="section-heading">結晶</h2>
     <div class="btn-group type-btns" id="crystal-type-group" role="group" aria-label="結晶の種類">
         <button data-type="CsCl">CsCl型</button>
         <button data-type="NaCl" class="active">NaCl型</button>
@@ -201,7 +199,6 @@
     </div>
 
     <div id="fcc-controls" hidden>
-        <h2 class="section-heading">観察方法</h2>
         <div class="btn-group" id="fcc-mode" role="group" aria-label="観察方法"><button data-value="normal" class="active">原子</button><button data-value="void">間隙</button><button data-value="compare" aria-describedby="fcc-mode-reason">比較表示</button></div>
         <p class="context-reason" id="fcc-mode-reason" hidden>比較は立体視を解除すると使えます</p>
         <div id="fcc-atom-controls">
@@ -218,7 +215,7 @@
                     <polygon points="5,8.5 12,12 12,19 5,15.5"></polygon>
                     <polygon points="12,12 19,8.5 19,15.5 12,19"></polygon>
                 </svg>
-            <span>1個</span></button>
+            </button>
             <button data-mode="1" title="田の字（4個）" aria-label="田の字（4個）">
                 <svg viewBox="1 1 22 22" width="28" height="28" stroke="currentColor" fill="none" stroke-width="1.2" stroke-linejoin="round">
                     <polygon points="12,5 21,9.5 12,14 3,9.5"></polygon>
@@ -229,7 +226,7 @@
                     <polygon points="12,14 21,9.5 21,14.5 12,19"></polygon>
                     <line x1="16.5" y1="11.75" x2="16.5" y2="16.75"></line>
                 </svg>
-            <span>4個</span></button>
+            </button>
             <button data-mode="2" title="8個" aria-label="8個">
                 <svg viewBox="1 1 22 22" width="28" height="28" stroke="currentColor" fill="none" stroke-width="1" stroke-linejoin="round">
                     <polygon points="12,2 22,7 12,12 2,7"></polygon>
@@ -242,7 +239,7 @@
                     <line x1="17" y1="9.5" x2="17" y2="19.5"></line>
                     <line x1="12" y1="17" x2="22" y2="12"></line>
                 </svg>
-            <span>8個</span></button>
+            </button>
         </div>
         <button id="toggle-clipping" class="toggle-btn active" data-prop="isClipping">格子切り出し</button>
             </div>
@@ -257,8 +254,8 @@
             <div class="label-text">間隙の表示</div>
             <div class="btn-group" id="fcc-display" role="group" aria-label="間隙の表示"><button data-value="void">間隙</button><button data-value="sphere">間隙球</button><button data-value="both" class="active">両方</button></div>
             <div class="label-text">不透明度</div>
-            <div class="opacity-row" id="fcc-void-opacity-row"><label class="opacity-label" for="fcc-void-opacity">間隙 <output id="fcc-void-value">24%</output></label><input id="fcc-void-opacity" aria-label="間隙の不透明度" type="range" min="0" max="1" step="0.01" value="0.24"></div>
-            <div class="opacity-row" id="fcc-sphere-opacity-row"><label class="opacity-label" for="fcc-sphere-opacity">間隙球 <output id="fcc-sphere-value">90%</output></label><input id="fcc-sphere-opacity" aria-label="間隙球の不透明度" type="range" min="0" max="1" step="0.01" value="0.9"></div>
+            <div class="opacity-row" id="fcc-void-opacity-row"><label class="opacity-label" for="fcc-void-opacity">間隙 <output id="fcc-void-value">70%</output></label><input id="fcc-void-opacity" aria-label="間隙の不透明度" type="range" min="0" max="1" step="0.01" value="0.7"></div>
+            <div class="opacity-row" id="fcc-sphere-opacity-row"><label class="opacity-label" for="fcc-sphere-opacity">間隙球 <output id="fcc-sphere-value">60%</output></label><input id="fcc-sphere-opacity" aria-label="間隙球の不透明度" type="range" min="0" max="1" step="0.01" value="0.6"></div>
         </div>
     </div>
     <div class="control-group" id="legacy-ratio" style="margin-bottom: 10px;">
@@ -307,13 +304,11 @@
 
     </div>
 
-    <h2 class="section-heading">表示設定</h2>
     <div class="control-grid" id="common-actions">
-
+        <button id="btn-reset-pos" class="toggle-btn" aria-label="模型の位置・向き・ズームをリセット" title="模型の位置・向き・ズームをリセット">位置を戻す</button>
         <button id="toggle-quality" class="toggle-btn" data-prop="isLowQuality">軽量モード</button>
     </div>
 
-    <div class="label-text">背景</div>
     <div class="btn-group bg-btns" id="bg-color-group" role="group" aria-label="背景色" style="margin-bottom: 0;">
         <button data-color="white" class="active">白</button>
         <button data-color="gray">灰</button>
@@ -632,23 +627,35 @@
 
         function syncPanelUI() {
             const stereo = STATE.stereoMode !== 'off';
+            DOM.btnPersp.disabled = stereo;
+            DOM.btnOrtho.disabled = stereo;
+            document.getElementById('projection-reason').hidden = !stereo;
+            describeControl(DOM.btnPersp,'projection-reason',stereo);
+            describeControl(DOM.btnOrtho,'projection-reason',stereo);
             const strong = document.getElementById('btn-stereo-strong');
             strong.disabled = !stereo;
             strong.classList.toggle('active',STATE.stereoStrong);
             strong.setAttribute('aria-pressed',String(STATE.stereoStrong));
             document.getElementById('stereo-strength-reason').hidden = stereo;
+            describeControl(strong,'stereo-strength-reason',!stereo);
             const hidden = [...hiddenIons].some(id=>id.startsWith(STATE.type+':'));
             const restore = document.getElementById('ion-restore');
             restore.disabled = !hidden;
             const reason = document.getElementById('ion-restore-reason');
             reason.textContent = !hidden ? '非表示のイオンはありません' : '不透明度0%のイオンは戻しても見えません';
             reason.hidden = hidden && !(STATE.opacityP===0 || STATE.opacityM===0);
+            describeControl(restore,'ion-restore-reason',!reason.hidden);
             DOM.diagonalBtn.disabled = !STATE.isClipping;
             DOM.snapDiagonalBtn.disabled = !STATE.isClipping || !STATE.isDiagonalMode;
             const sectionReason = document.getElementById('ion-section-reason');
             sectionReason.textContent = !STATE.isClipping ? '格子切り出しをオンにすると断面操作が使えます' : '対角断面をオンにすると正面表示できます';
             sectionReason.hidden = !DOM.snapDiagonalBtn.disabled;
-            document.getElementById('ion-opacity-reason').hidden = STATE.type==='FCC' || !STATE.isOpacityForced;
+            describeControl(DOM.diagonalBtn,'ion-section-reason',DOM.diagonalBtn.disabled);
+            describeControl(DOM.snapDiagonalBtn,'ion-section-reason',DOM.snapDiagonalBtn.disabled);
+            const opacityReason = document.getElementById('ion-opacity-reason');
+            opacityReason.hidden = STATE.type==='FCC' || !STATE.isOpacityForced;
+            describeControl(DOM.opacityPSlider,'ion-opacity-reason',!opacityReason.hidden);
+            describeControl(DOM.opacityMSlider,'ion-opacity-reason',!opacityReason.hidden);
             document.querySelectorAll('#ui-panel button[data-type],#ui-panel button[data-mode],#ui-panel button[data-color],#ui-panel button[data-prop],#toggle-pin,#toggle-ratio-pin,#btn-persp,#btn-ortho,#btn-stereo').forEach(button=>button.setAttribute('aria-pressed',String(button.classList.contains('active'))));
         }
 
@@ -1041,7 +1048,6 @@
                 STATE.stereoMode = next;
                 fcc.setStereo(next !== 'off');
                 if (next === 'off' && stereoWasOrtho) { STATE.isOrthographic = true; syncCameras(true); }
-                DOM.btnPersp.hidden = next !== 'off'; DOM.btnOrtho.hidden = next !== 'off';
                 DOM.btnPersp.classList.toggle('active', !STATE.isOrthographic);
                 DOM.btnOrtho.classList.toggle('active', STATE.isOrthographic);
                 const label = next === 'off' ? '立体視' : next === 'cross' ? '交差法' : '平行法';
