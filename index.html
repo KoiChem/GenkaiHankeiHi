@@ -39,7 +39,7 @@
             #ui-panel.hidden { transform: translateX(350px); opacity: 0; pointer-events: none; }
         }
         @media (max-width: 599px) {
-            #ui-panel { top:120px; right:12px; bottom:auto; left:auto; transform:none; width:85%; }
+            #ui-panel { top:calc(env(safe-area-inset-top, 0px) + 86px); right:12px; bottom:auto; left:auto; transform:none; width:85%; }
             #ui-panel.hidden { transform:translateX(calc(100% + 24px)); opacity:0; pointer-events:none; }
         }
 
@@ -155,7 +155,8 @@
         #ui-panel .bg-btns button.active { background:#dceafb !important; color:#173b61 !important; border-color:#406b96 !important; }
         @media(max-width:599px) { #ui-panel { width:calc(100% - 24px); max-width:310px; max-height:72dvh; bottom:auto; padding:12px; } }
         @media(max-height:540px) { #ui-panel { width:310px; max-width:calc(100% - 24px); top:66px; right:12px; left:auto; bottom:auto; max-height:calc(100dvh - 82px); padding:12px; } }
-        @media(max-width:435px) and (max-height:540px) { #ui-panel { top:120px; max-height:calc(100dvh - 132px); } }
+        @media(max-width:599px) and (min-height:541px) { #toggle-panel-btn { top:calc(env(safe-area-inset-top, 0px) + 31px); } }
+        @media(max-width:435px) and (max-height:540px) { #ui-panel { top:calc(env(safe-area-inset-top, 0px) + 86px); max-height:calc(100dvh - env(safe-area-inset-top, 0px) - 98px); } #toggle-panel-btn { top:calc(env(safe-area-inset-top, 0px) + 31px); } }
         @media(max-width:319px) { .cam-btn-container { flex-wrap:wrap; } .stereo-control { flex-basis:100%; } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
