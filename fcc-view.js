@@ -12,7 +12,7 @@ function describeControl(control,reasonId,needed) {
 /* Alternate-page FCC controller. Legacy ion rendering and input stay in FCC.html. */
 function createFCCView({ THREE, renderer, controls, state: shared, getCamera, cameras, views, stopMotion, onIonTap, onViewChange }) {
     const G = FCCGeometry, a = 3, baseSites = G.sites();
-    const state = { mode:'normal', beforeCompare:'normal', palette:'sites', kind:'both', display:'both', atom:.85, void:.7, sphere:.6, hidden:new Set(), selected:null };
+    const state = { mode:'normal', palette:'sites', kind:'both', display:'both', atom:.85, void:.7, sphere:.6, hidden:new Set(), selected:null };
     const scenes = { normal:new THREE.Scene(), void:new THREE.Scene() };
     const viewLights = new Map();
     for(const scene of Object.values(scenes)) {
@@ -198,7 +198,6 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         if (views.stereo() && mode === 'compare') { stereoReturn = 'compare'; mode = 'void'; }
         else stereoReturn = null;
         viewChanged();
-        if(mode==='compare'&&state.mode!=='compare')state.beforeCompare=state.mode;
         state.mode=mode;update();
     }
     function reset() {
@@ -256,9 +255,9 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const hits=ray.intersectObjects(targets,false).filter(hit=>clips.every(p=>p.distanceToPoint(hit.point)>=-1e-6));
         return hits.map(h=>({id:h.object.userData.site.id,distance:h.distance}));
     }
-    let down=null,pressTimer=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set();
+    let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set();
     function viewChanged(){recentHide=null;onViewChange();cancelGesture();}
-    function cancelGesture() {clearTimeout(pressTimer);clearTimeout(tapTimer);pressTimer=tapTimer=null;down=null;taps=0;tapPoint=null;}
+    function cancelGesture() {clearTimeout(tapTimer);tapTimer=null;down=null;taps=0;tapPoint=null;}
     function tap(count,p) {
         if(!enabled()){onIonTap(count,p);return;}
         if(count===1){const hits=pick(p.x,p.y,'void');if(hits.length){state.selected=state.selected===hits[0].id?null:hits[0].id;guide();}return;}
@@ -274,25 +273,19 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         if(pointers.size>1||!e.isPrimary||e.button!==0){cancelGesture();return;}
         if(tapPoint&&Math.hypot(e.clientX-tapPoint.x,e.clientY-tapPoint.y)>12)cancelGesture();
         clearTimeout(tapTimer);tapTimer=null;
-        down={id:e.pointerId,x:e.clientX,y:e.clientY,moved:false,long:false};
-        const point={x:e.clientX,y:e.clientY};
-        if(!enabled())return;
-        pressTimer=setTimeout(()=>{
-            if(!down||down.moved||pointers.size!==1)return;
-            if(!(state.atom>0&&pick(point.x,point.y,'atom').some(h=>!state.hidden.has(h.id)))&&!pick(point.x,point.y,'void').length)return;
-            const next=state.mode==='compare'?state.beforeCompare:state.mode==='normal'?'void':'normal';
-            down.long=true;clearTimeout(tapTimer);taps=0;setMode(next);
-        },450);
+        down={id:e.pointerId,x:e.clientX,y:e.clientY,moved:false,time:performance.now()};
     });
     window.addEventListener('pointermove',e=>{
         if(!down||e.pointerId!==down.id)return;
-        if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>8){down.moved=true;clearTimeout(pressTimer);clearTimeout(tapTimer);taps=0;tapPoint=null;recentHide=null;onViewChange();}
+        if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>8){down.moved=true;clearTimeout(tapTimer);taps=0;tapPoint=null;recentHide=null;onViewChange();}
     });
     window.addEventListener('pointerup',e=>{
         pointers.delete(e.pointerId);
         if(!down||e.pointerId!==down.id)return;
-        const previous=down;down=null;clearTimeout(pressTimer);
-        if(previous.moved||previous.long||e.button!==0||pointers.size)return;
+        const previous=down;down=null;
+        // A held pointer is not a tap and never changes the display model.
+        if(performance.now()-previous.time>=450){cancelGesture();return;}
+        if(previous.moved||e.button!==0||pointers.size)return;
         taps++;tapPoint={x:e.clientX,y:e.clientY};
         if(taps===3){const p=tapPoint;cancelGesture();tap(3,p);}
         else tapTimer=setTimeout(()=>{const count=taps,p=tapPoint;cancelGesture();if(p)tap(count,p);},300);

@@ -44,10 +44,20 @@ async (page) => {
     await page.mouse.move(p.x,p.y);await page.mouse.down();await page.mouse.move(p.x+65,p.y+30,{steps:10});await page.waitForTimeout(500);await page.mouse.up();await page.waitForTimeout(350);
     assert(await page.locator('#fcc-mode button[data-value="normal"]').getAttribute('aria-pressed')==='true','drag past long-press threshold stays in normal mode');
     assert(await countHidden()===0,'drag cannot hide an atom');
+    await panel(true);await click('#grid-mode-group button[data-mode="2"]');await click('#btn-reset-pos');await panel(false);p=await point([6,3,3]);
+    await page.mouse.move(p.x,p.y);await page.mouse.down();
+    for(let i=1;i<=10;i++){await page.mouse.move(p.x+i*.6,p.y);await page.waitForTimeout(40);}
+    await page.waitForTimeout(200);await page.mouse.up();
+    assert(await page.locator('#fcc-mode button[data-value="normal"]').getAttribute('aria-pressed')==='true','slow small rotation in eight-cell mode keeps atom mode');
+    await panel(true);await click('#grid-mode-group button[data-mode="0"]');
     await panel(true);await click('#btn-reset-pos');await panel(false);p=await point([3,1.5,1.5]);
     await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForTimeout(520);await page.mouse.up();
     await page.waitForFunction(()=>document.querySelector('#fcc-loading').hidden);
-    assert(await page.locator('#fcc-mode button[data-value="void"]').getAttribute('aria-pressed')==='true','long press on atom enters void mode');
+    assert(await page.locator('#fcc-mode button[data-value="normal"]').getAttribute('aria-pressed')==='true','long press on atom keeps atom mode');
+    await panel(true);await click('#fcc-mode button[data-value="void"]');await panel(false);
+    await page.waitForFunction(()=>document.querySelector('#fcc-loading').hidden);
+    p=await point([1.5,1.5,1.5]);await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForTimeout(650);await page.mouse.up();
+    assert(await page.locator('#fcc-mode button[data-value="void"]').getAttribute('aria-pressed')==='true','long press keeps void mode');
     assert(await page.evaluate(()=>__fccScenes.void.children.filter(o=>o.isGroup).length)===2,'void scene contains voids and guides, without background atoms');
     const voidIds=await page.evaluate(()=>__fccScenes.void.children.find(o=>o.isGroup).children.map(o=>o.userData.site.id));
     assert(voidIds.length===21,'all 13 octahedral pieces and 8 tetrahedral sites are mounted');
@@ -72,7 +82,7 @@ async (page) => {
     const sync=await page.evaluate(()=>{const a=__fccCameras.normal,b=__fccCameras.void;return a.position.distanceTo(b.position)<1e-10&&a.quaternion.angleTo(b.quaternion)<1e-10&&a.projectionMatrix.equals(b.projectionMatrix);});
     assert(sync,'comparison cameras share orientation, position and projection scale');
     p=await point([3,1.5,1.5],'left');await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForTimeout(520);await page.mouse.up();
-    assert(await page.locator('#fcc-mode button[data-value="void"]').getAttribute('aria-pressed')==='true','comparison long press returns to the prior void mode');
+    assert(await page.locator('#fcc-mode button[data-value="compare"]').getAttribute('aria-pressed')==='true','long press keeps comparison mode');
     await panel(true);await click('#fcc-mode button[data-value="normal"]');
     for(const name of ['CsCl','NaCl','ZnS']){
         await click('#crystal-type-group button[data-type="'+name+'"]');
