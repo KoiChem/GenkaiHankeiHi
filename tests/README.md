@@ -134,3 +134,7 @@ cancel, a second finger, touch cancellation, and camera-control recovery.
 Long press is 500ms with the existing 8px movement tolerance; hiding requires
 50 CSS pixels of final displacement. Existing double/triple taps remain available.
 Physical Safari and Android touch feel require device testing.
+
+## Current hide and restore gestures (2026-11-12)
+
+Run `fcc-hold-swipe-browser.js` independently. It initializes its own scene instrumentation and verifies long-press swipe hiding, double-tap restoration, triple-tap cancellation, and auxiliary-action suppression for all four crystal types (52 checks). Older scenario assertions about double-tap hiding or triple-tap restoration describe the previous interaction contract.

@@ -1,5 +1,7 @@
 async page=>{
  const checks=[],assert=(v,m)=>{if(!v)throw Error(m);checks.push(m);};
+ await page.addInitScript(()=>document.addEventListener('DOMContentLoaded',()=>{const make=window.createFCCView;window.createFCCView=o=>{window.__fccArgs=o;window.__fccScenes={};window.__lastScene=null;const c=make(o),render=o.renderer.render.bind(o.renderer);o.renderer.render=(s,cam)=>{__lastScene=s;const p=s.children.find(x=>x.isGroup)?.children[0]?.userData?.site;if(p)__fccScenes[p.kind?'void':'normal']=s;return render(s,cam);};return c;};}));
+ await page.goto('http://127.0.0.1:8765/');await page.waitForFunction(()=>window.__fccArgs);
  const cdp=await page.context().newCDPSession(page);
  const touch=(type,points)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points});
  await page.setViewportSize({width:844,height:390});
@@ -20,6 +22,14 @@ async page=>{
   await start();await touch('touchCancel',[]);await page.waitForTimeout(350);assert(await count()===0,type+' interrupted touch cancels');
   await start();await touch('touchMove',[{x:p.x+65,y:p.y,id:1}]);assert(await count()===0,type+' hides only on release');await touch('touchEnd',[]);await page.waitForTimeout(350);assert(await count()===1,type+' swipe hides one');
   assert(await page.evaluate(()=>__fccArgs.controls.enabled),type+' restores camera controls');
+  const aux=await page.evaluate(()=>STATE.auxLinesState);
+  await page.mouse.click(p.x,p.y,{clickCount:3,delay:65});await page.waitForTimeout(400);
+  assert(await count()===1,type+' triple tap does nothing');
+  assert(await page.evaluate(()=>STATE.auxLinesState)===aux,type+' triple tap does not change auxiliary lines');
+  await page.mouse.click(p.x,p.y,{clickCount:2,delay:65});await page.waitForTimeout(400);
+  assert(await count()===0,type+' double tap restores the just hidden target');
+  await page.mouse.click(p.x,p.y,{clickCount:2,delay:65});await page.waitForTimeout(400);
+  assert(await count()===0,type+' double tap cannot hide visible targets');
  }
  await cdp.detach();return{checks:checks.length,results:checks};
 }

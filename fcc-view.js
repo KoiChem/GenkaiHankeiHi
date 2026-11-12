@@ -276,10 +276,11 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     function tap(count,p) {
         if(!enabled()){onIonTap(count,p);return;}
         if(count===1){const hits=pick(p.x,p.y,'void');if(hits.length){state.selected=state.selected===hits[0].id?null:hits[0].id;guide();}return;}
-        const hits=count===2&&state.atom<=0?[]:pick(p.x,p.y,'atom');
+        if(count!==2)return;
+        const hits=pick(p.x,p.y,'atom');
         const recent=recentHide&&Date.now()-recentHide.time<5000&&Math.hypot(p.x-recentHide.x,p.y-recentHide.y)<12?recentHide.id:null;
-        const id=G.pickAtom(hits,state.hidden,count===2?'hide':'restore',recent);
-        if(id){if(count===2){state.hidden.add(id);recentHide={id,x:p.x,y:p.y,time:Date.now()};}else{state.hidden.delete(id);recentHide=null;}update();}
+        const id=G.pickAtom(hits,state.hidden,'restore',recent);
+        if(id){state.hidden.delete(id);recentHide=null;update();}
     }
     document.getElementById('ui-panel').addEventListener('pointerdown',()=>{cancelGesture();pointers.clear();});
     const canvas=renderer.domElement;
@@ -305,14 +306,14 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         if(held){
             const target=held,commit=Math.hypot(e.clientX-target.x,e.clientY-target.y)>=50;
             cancelGesture();
-            if(commit){if(enabled()){state.hidden.add(target.id);recentHide=null;update();}else onIonTap(4,target);}
+            if(commit){if(enabled()){state.hidden.add(target.id);recentHide={id:target.id,x:target.x,y:target.y,time:Date.now()};update();}else onIonTap(4,target);}
             return;
         }
         // A held pointer is not a tap and never changes the display model.
         if(performance.now()-previous.time>=450){cancelGesture();return;}
         if(previous.moved||e.button!==0||pointers.size)return;
         taps++;tapPoint={x:e.clientX,y:e.clientY};
-        if(taps===3){const p=tapPoint;cancelGesture();tap(3,p);}
+        if(taps===3)cancelGesture();
         else tapTimer=setTimeout(()=>{const count=taps,p=tapPoint;cancelGesture();if(p)tap(count,p);},300);
     });
     window.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);cancelGesture();});
