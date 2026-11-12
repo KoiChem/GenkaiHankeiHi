@@ -29,7 +29,8 @@ function createSelectionGlow(renderer) {
             const width=Math.max(1,Math.ceil(viewport.z/2)),height=Math.max(1,Math.ceil(viewport.w/2));
             if(target.width!==width||target.height!==height)target.setSize(width,height);
             selected.forEach((source,i)=>{source.updateWorldMatrix(true,false);maskScene.children[i].matrix.copy(source.matrixWorld);});
-            renderer.setRenderTarget(target);renderer.setScissorTest(false);renderer.setViewport(0,0,width,height);renderer.autoClear=true;
+            // Render targets use texture pixels; setViewport would apply the screen DPR again.
+            renderer.setRenderTarget(target);renderer.setScissorTest(false);renderer.autoClear=true;
             render(maskScene,viewCamera);
             renderer.setRenderTarget(oldTarget);renderer.setViewport(viewport);renderer.setScissor(scissor);renderer.setScissorTest(test);renderer.autoClear=false;
             material.uniforms.pixel.value.set(1/width,1/height);render(overlay,camera);
