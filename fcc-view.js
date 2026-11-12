@@ -4,6 +4,27 @@ function placeScreenLight(light,camera,target) {
     light.target.position.copy(target);
 }
 
+// Soft light through the sphere's projected interior; clipping caps share its center.
+function applyInnerGlow(material, center, radius) {
+    if(material.userData.innerGlow){material.userData.innerGlow.value=1;return;}
+    const strength={value:1};material.userData.innerGlow=strength;
+    material.onBeforeCompile=shader=>{
+        shader.uniforms.innerGlowStrength=strength;
+        shader.uniforms.innerGlowCenter={value:center};
+        shader.uniforms.innerGlowRadius={value:radius};
+        shader.vertexShader='varying vec3 innerGlowWorld;\n'+shader.vertexShader;
+        shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\ninnerGlowWorld=(modelMatrix*vec4(transformed,1.0)).xyz;');
+        shader.fragmentShader='varying vec3 innerGlowWorld;\nuniform vec3 innerGlowCenter;\nuniform float innerGlowRadius;\nuniform float innerGlowStrength;\n'+shader.fragmentShader;
+        shader.fragmentShader=shader.fragmentShader.replace('#include <tonemapping_fragment>', `
+            vec3 glowDirection=normalize(cameraPosition-innerGlowCenter);
+            float glowDistance=length(cross(innerGlowWorld-innerGlowCenter,glowDirection))/innerGlowRadius;
+            float glow=exp(-4.5*glowDistance*glowDistance)*innerGlowStrength;
+            gl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(1.0,0.95,0.16),0.95*glow);
+            #include <tonemapping_fragment>`);
+    };
+    material.customProgramCacheKey=()=> 'inner-glow-v1';material.needsUpdate=true;
+}
+
 function describeControl(control,reasonId,needed) {
     if (needed) control.setAttribute('aria-describedby',reasonId);
     else control.removeAttribute('aria-describedby');
@@ -258,7 +279,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set(),holdTimer=null,held=null;
     function endHold(){
         clearTimeout(holdTimer);holdTimer=null;
-        if(held){for(const {material}of atomMaterials)material.emissive.setHex(0);onIonTap(6,held);controls.enabled=true;}
+        if(held){for(const {material}of atomMaterials)if(material.userData.innerGlow)material.userData.innerGlow.value=0;onIonTap(6,held);controls.enabled=true;}
         held=null;
     }
     function beginHold(){
@@ -267,7 +288,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const id=enabled()?(state.atom>0?G.pickAtom(pick(p.x,p.y,'atom'),state.hidden,'hide',null):null):onIonTap(0,p);
         if(!id)return;
         held={id,...p};clearTimeout(tapTimer);taps=0;tapPoint=null;
-        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)material.emissive.setHex(0xffff00);}
+        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)applyInnerGlow(material,vec(site.p),G.R*a);}
         else onIonTap(5,held);
         controls.enabled=false;
     }
