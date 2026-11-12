@@ -255,9 +255,29 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const hits=ray.intersectObjects(targets,false).filter(hit=>clips.every(p=>p.distanceToPoint(hit.point)>=-1e-6));
         return hits.map(h=>({id:h.object.userData.site.id,distance:h.distance}));
     }
-    let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set();
+    let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set(),holdTimer=null,held=null;
+    const halo=document.createElement('div');
+    halo.style.cssText='position:fixed;width:64px;height:64px;border:2px solid #397eaa;border-radius:50%;box-shadow:0 0 16px 8px #8dcced99;pointer-events:none;z-index:3;display:none;transform:translate(-50%,-50%)';
+    halo.setAttribute('aria-hidden','true');document.body.appendChild(halo);
+    function endHold(){
+        clearTimeout(holdTimer);holdTimer=null;
+        if(held){for(const {material}of atomMaterials)material.emissive.setHex(0);onIonTap(6,held);controls.enabled=true;}
+        held=null;halo.style.display='none';
+    }
+    function beginHold(){
+        if(!down||down.moved||pointers.size!==1)return;
+        const p={x:down.x,y:down.y};
+        const id=enabled()?(state.atom>0?G.pickAtom(pick(p.x,p.y,'atom'),state.hidden,'hide',null):null):onIonTap(0,p);
+        if(!id)return;
+        held={id,...p};clearTimeout(tapTimer);taps=0;tapPoint=null;
+        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)material.emissive.setHex(0x36586c);}
+        else onIonTap(5,held);
+        halo.style.borderWidth='2px';
+        controls.enabled=false;
+        halo.style.left=p.x+'px';halo.style.top=p.y+'px';halo.style.display='block';
+    }
     function viewChanged(){recentHide=null;onViewChange();cancelGesture();}
-    function cancelGesture() {clearTimeout(tapTimer);tapTimer=null;down=null;taps=0;tapPoint=null;}
+    function cancelGesture() {endHold();clearTimeout(tapTimer);tapTimer=null;down=null;taps=0;tapPoint=null;}
     function tap(count,p) {
         if(!enabled()){onIonTap(count,p);return;}
         if(count===1){const hits=pick(p.x,p.y,'void');if(hits.length){state.selected=state.selected===hits[0].id?null:hits[0].id;guide();}return;}
@@ -268,21 +288,31 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     }
     document.getElementById('ui-panel').addEventListener('pointerdown',()=>{cancelGesture();pointers.clear();});
     const canvas=renderer.domElement;
+    // Release the camera lock before its canvas listener sees a second finger.
+    document.addEventListener('pointerdown',e=>{if(held&&down&&e.pointerId!==down.id)cancelGesture();},true);
     canvas.addEventListener('pointerdown',e=>{
         pointers.add(e.pointerId);
         if(pointers.size>1||!e.isPrimary||e.button!==0){cancelGesture();return;}
         if(tapPoint&&Math.hypot(e.clientX-tapPoint.x,e.clientY-tapPoint.y)>12)cancelGesture();
         clearTimeout(tapTimer);tapTimer=null;
         down={id:e.pointerId,x:e.clientX,y:e.clientY,moved:false,time:performance.now()};
+        clearTimeout(holdTimer);holdTimer=setTimeout(beginHold,500);
     });
     window.addEventListener('pointermove',e=>{
         if(!down||e.pointerId!==down.id)return;
-        if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>8){down.moved=true;clearTimeout(tapTimer);taps=0;tapPoint=null;recentHide=null;onViewChange();}
+        if(held){halo.style.borderWidth=Math.hypot(e.clientX-held.x,e.clientY-held.y)>=50?'4px':'2px';return;}
+        if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>8){clearTimeout(holdTimer);down.moved=true;clearTimeout(tapTimer);taps=0;tapPoint=null;recentHide=null;onViewChange();}
     });
     window.addEventListener('pointerup',e=>{
         pointers.delete(e.pointerId);
         if(!down||e.pointerId!==down.id)return;
-        const previous=down;down=null;
+        const previous=down;down=null;clearTimeout(holdTimer);
+        if(held){
+            const target=held,commit=Math.hypot(e.clientX-target.x,e.clientY-target.y)>=50;
+            cancelGesture();
+            if(commit){if(enabled()){state.hidden.add(target.id);recentHide=null;update();}else onIonTap(4,target);}
+            return;
+        }
         // A held pointer is not a tap and never changes the display model.
         if(performance.now()-previous.time>=450){cancelGesture();return;}
         if(previous.moved||e.button!==0||pointers.size)return;

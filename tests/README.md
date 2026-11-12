@@ -124,3 +124,13 @@ Run `tests/fcc-panel-browser.js` with the filename-based Playwright MCP call. It
 `tests/fcc-panel-sizing-browser.js` checks panel geometry, phone/tablet pin defaults and crystal switching at matched scale in both projections.
 
 The UI test measures selected and unselected controls; this targeted check is not an accessibility compliance audit. Screenshots under `.playwright-mcp/fcc-panel-*.png` are temporary verification artifacts.
+
+## Long press and swipe hiding
+
+After `fcc-ion-gestures-browser.js` initializes scene instrumentation, run
+`fcc-hold-swipe-browser.js`. It sends Chromium touch input for all four crystal
+models and checks selection, rotation locking, release-only hiding, returning to
+cancel, a second finger, touch cancellation, and camera-control recovery.
+Long press is 500ms with the existing 8px movement tolerance; hiding requires
+50 CSS pixels of final displacement. Existing double/triple taps remain available.
+Physical Safari and Android touch feel require device testing.

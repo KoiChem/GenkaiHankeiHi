@@ -162,7 +162,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
     <script src="fcc-geometry.js"></script>
-    <script src="fcc-view.js?v=20261103-compact-panel"></script>
+    <script src="fcc-view.js?v=20261112-hold-swipe"></script>
     <script src="model-views.js?v=20261102-panel"></script>
     <script src="view-cube.js?v=20261103-no-tap-highlight"></script>
 </head>
@@ -413,6 +413,7 @@
         let currentPlanes = [];
         const hiddenIons = new Set();
         let ionSites = [], recentHiddenIon = null;
+        let highlightedIonMaterials = [];
         const modelTouchIds = new Set();
         let suppressModelTouches = false, modelMouseDown = false;
 
@@ -938,7 +939,10 @@
         };
 
         const handleIonTap = (count,point) => {
+            if(count===6){for(const entry of highlightedIonMaterials){entry.mesh.material=entry.original;entry.highlight.dispose();}highlightedIonMaterials=[];return;}
             if(STATE.type === 'FCC') return;
+            if(count===5){atomsGroup.traverse(mesh=>{if(mesh.userData.ionSiteId===point.id&&mesh.material){const original=mesh.material,highlight=original.clone();if(highlight.emissive)highlight.emissive.setHex(0x36586c);else highlight.color.lerp(new THREE.Color(0xaddfff),.35);mesh.material=highlight;highlightedIonMaterials.push({mesh,original,highlight});}});return;}
+            if(count===4){hiddenIons.add(point.id);recentHiddenIon=null;updateScene();return;}
             activeCamera.updateMatrixWorld();
             const ray = new THREE.Raycaster();
             const picked = views.pick(activeCamera,point.x,point.y);
@@ -949,6 +953,7 @@
                 return distance === null ? [] : [{ id:site.id, distance, opacity:site.opacity }];
             });
             const visible = hits.filter(hit => hit.opacity > 0 && !hiddenIons.has(hit.id));
+            if(count===0)return FCCGeometry.pickAtom(visible,hiddenIons,'hide',null);
             if(count === 1){
                 if(!visible.length)return;
                 STATE.auxLinesState = (STATE.auxLinesState + 1) % 3;
