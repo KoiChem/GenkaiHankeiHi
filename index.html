@@ -162,7 +162,8 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
     <script src="fcc-geometry.js"></script>
-    <script src="fcc-view.js?v=20261112-clipped-glow"></script>
+    <script src="selection-glow.js?v=20261112-mask"></script>
+    <script src="fcc-view.js?v=20261112-mask-glow"></script>
     <script src="model-views.js?v=20261102-panel"></script>
     <script src="view-cube.js?v=20261103-no-tap-highlight"></script>
 </head>
@@ -413,7 +414,7 @@
         let currentPlanes = [];
         const hiddenIons = new Set();
         let ionSites = [], recentHiddenIon = null;
-        let highlightedIonMaterials = [], highlightedIonGlow=null;
+        let selectionGlow;
         const modelTouchIds = new Set();
         let suppressModelTouches = false, modelMouseDown = false;
 
@@ -468,6 +469,8 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.localClippingEnabled = true;
+            selectionGlow = createSelectionGlow(renderer);
+            window.selectionGlow=selectionGlow;
             document.body.appendChild(renderer.domElement);
 
             controls = new THREE.TrackballControls(activeCamera, renderer.domElement);
@@ -939,9 +942,9 @@
         };
 
         const handleIonTap = (count,point) => {
-            if(count===6){removeOuterGlow(highlightedIonGlow);highlightedIonGlow=null;for(const entry of highlightedIonMaterials){entry.mesh.material=entry.original;entry.highlight.dispose();}highlightedIonMaterials=[];return;}
+            if(count===6){selectionGlow.clear();return;}
             if(STATE.type === 'FCC') return;
-            if(count===5){const target=ionSites.find(s=>s.id===point.id);highlightedIonGlow=createOuterGlow(new THREE.Vector3(...target.position),target.radius,currentPlanes);scene.add(highlightedIonGlow);atomsGroup.traverse(mesh=>{if(mesh.userData.ionSiteId===point.id&&mesh.material){const original=mesh.material,highlight=original.clone();const site=ionSites.find(s=>s.id===point.id);applyInnerGlow(highlight,new THREE.Vector3(...site.position),site.radius);mesh.material=highlight;highlightedIonMaterials.push({mesh,original,highlight});}});return;}
+            if(count===5){const meshes=[];atomsGroup.traverse(m=>{if(m.userData.ionSiteId===point.id)meshes.push(m);});selectionGlow.select(meshes);return;}
             if(count===4){hiddenIons.add(point.id);recentHiddenIon=null;updateScene();return;}
             activeCamera.updateMatrixWorld();
             const ray = new THREE.Raycaster();

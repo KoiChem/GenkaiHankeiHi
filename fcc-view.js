@@ -4,59 +4,6 @@ function placeScreenLight(light,camera,target) {
     light.target.position.copy(target);
 }
 
-// Soft light through the sphere's projected interior; clipping caps share its center.
-function applyInnerGlow(material, center, radius) {
-    if(material.userData.innerGlow){material.userData.innerGlow.value=1;return;}
-    const strength={value:1};material.userData.innerGlow=strength;
-    material.onBeforeCompile=shader=>{
-        shader.uniforms.innerGlowStrength=strength;
-        shader.uniforms.innerGlowCenter={value:center};
-        shader.uniforms.innerGlowRadius={value:radius};
-        shader.vertexShader='varying vec3 innerGlowWorld;\n'+shader.vertexShader;
-        shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\ninnerGlowWorld=(modelMatrix*vec4(transformed,1.0)).xyz;');
-        shader.fragmentShader='varying vec3 innerGlowWorld;\nuniform vec3 innerGlowCenter;\nuniform float innerGlowRadius;\nuniform float innerGlowStrength;\n'+shader.fragmentShader;
-        shader.fragmentShader=shader.fragmentShader.replace('#include <tonemapping_fragment>', `
-            vec3 glowDirection=normalize(cameraPosition-innerGlowCenter);
-            float glowDistance=length(cross(innerGlowWorld-innerGlowCenter,glowDirection))/innerGlowRadius;
-            float glow=exp(-4.5*glowDistance*glowDistance)*innerGlowStrength;
-            gl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(1.0,0.95,0.16),0.95*glow);
-            #include <tonemapping_fragment>`);
-    };
-    material.customProgramCacheKey=()=> 'inner-glow-v1';material.needsUpdate=true;
-}
-
-// A translucent volume extends the soft light beyond the sphere without an outline.
-function createOuterGlow(center, radius, planes=[]) {
-    const boundaries=Array.from({length:8},(_,i)=>planes[i]?new THREE.Vector4(...planes[i].normal.toArray(),planes[i].constant):new THREE.Vector4(0,0,0,10000));
-    const material=new THREE.ShaderMaterial({
-        uniforms:{glowCenter:{value:center},glowRadius:{value:radius},glowPlanes:{value:boundaries},orthographicGlow:{value:false}},
-        vertexShader:`varying vec3 glowWorld;
-            void main(){vec4 world=modelMatrix*vec4(position,1.0);glowWorld=world.xyz;
-            gl_Position=projectionMatrix*viewMatrix*world;}`,
-        fragmentShader:`varying vec3 glowWorld;uniform vec3 glowCenter;uniform float glowRadius;
-            uniform vec4 glowPlanes[8];uniform bool orthographicGlow;
-            void main(){
-                vec3 direction=orthographicGlow?-vec3(viewMatrix[0][2],viewMatrix[1][2],viewMatrix[2][2]):normalize(glowWorld-cameraPosition);
-                float light=0.0;
-                // Integrate a softly expanded copy of the visible, clipped solid.
-                // Removed material contributes no light; only a small fringe crosses a cut.
-                for(int i=0;i<24;i++){
-                    vec3 p=glowWorld+direction*(float(i)+0.5)*glowRadius*2.5/24.0;
-                    float distance=length(p-glowCenter)-glowRadius;
-                    for(int j=0;j<8;j++)distance=max(distance,-dot(glowPlanes[j].xyz,p)-glowPlanes[j].w);
-                    float outside=max(distance,0.0)/(glowRadius*0.09);
-                    light+=exp(-outside*outside)*0.012;
-                }
-                gl_FragColor=vec4(1.0,0.91,0.25,min(light,0.15));
-            }`,
-        transparent:true,depthWrite:false
-    });
-    const glow=new THREE.Mesh(new THREE.SphereGeometry(radius*1.25,32,24),material);
-    glow.position.copy(center);glow.renderOrder=10;
-    glow.onBeforeRender=(_renderer,_scene,camera)=>{material.uniforms.orthographicGlow.value=!!camera.isOrthographicCamera;};return glow;
-}
-function removeOuterGlow(glow){if(glow){if(glow.parent)glow.parent.remove(glow);glow.geometry.dispose();glow.material.dispose();}}
-
 function describeControl(control,reasonId,needed) {
     if (needed) control.setAttribute('aria-describedby',reasonId);
     else control.removeAttribute('aria-describedby');
@@ -308,11 +255,11 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const hits=ray.intersectObjects(targets,false).filter(hit=>clips.every(p=>p.distanceToPoint(hit.point)>=-1e-6));
         return hits.map(h=>({id:h.object.userData.site.id,distance:h.distance}));
     }
-    let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set(),holdTimer=null,held=null,outerGlow=null;
+    let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set(),holdTimer=null,held=null;
     function endHold(){
         clearTimeout(holdTimer);holdTimer=null;
-        if(held){for(const {material}of atomMaterials)if(material.userData.innerGlow)material.userData.innerGlow.value=0;onIonTap(6,held);controls.enabled=true;}
-        removeOuterGlow(outerGlow);outerGlow=null;held=null;
+        if(held){selectionGlow.clear();onIonTap(6,held);controls.enabled=true;}
+        held=null;
     }
     function beginHold(){
         if(!down||down.moved||pointers.size!==1)return;
@@ -320,7 +267,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const id=enabled()?(state.atom>0?G.pickAtom(pick(p.x,p.y,'atom'),state.hidden,'hide',null):null):onIonTap(0,p);
         if(!id)return;
         held={id,...p};clearTimeout(tapTimer);taps=0;tapPoint=null;
-        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)applyInnerGlow(material,vec(site.p),G.R*a);const site=G.atoms(atomGrid()).find(s=>s.id===id);outerGlow=createOuterGlow(vec(site.p),G.R*a,atomMaterials.find(e=>e.site.id===id).material.clippingPlanes);scenes.normal.add(outerGlow);}
+        if(enabled())selectionGlow.select(atomObjects.find(o=>o.userData.site.id===id).children);
         else onIonTap(5,held);
         controls.enabled=false;
     }
