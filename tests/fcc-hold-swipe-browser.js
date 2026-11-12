@@ -14,7 +14,9 @@ async page=>{
   const count=()=>page.evaluate(()=>STATE.type==='FCC'?__fccScenes.normal.children.find(g=>g.isGroup).children.filter(g=>!g.visible).length:__lastScene.children.find(g=>g.isGroup).children.filter(m=>m.geometry?.type==='SphereGeometry'&&!m.visible).length);
   const start=async()=>{await touch('touchStart',[{...p,id:1}]);await page.waitForTimeout(600);};
   await start();assert(await page.evaluate(()=>!__fccArgs.controls.enabled),type+' hold selects and locks rotation');
+  assert(await page.evaluate(()=>{const scene=STATE.type==='FCC'?__fccScenes.normal:__lastScene;return scene.children.filter(m=>m.material?.isShaderMaterial&&m.geometry.parameters.radius>m.material.uniforms.glowRadius.value).length===1;}),type+' soft light extends beyond selected sphere');
   await touch('touchEnd',[]);await page.waitForTimeout(350);assert(await count()===0,type+' hold alone cancels');
+  assert(await page.evaluate(()=>(STATE.type==='FCC'?__fccScenes.normal:__lastScene).children.every(m=>!m.material?.isShaderMaterial)),type+' cancel removes external light');
   await start();await touch('touchMove',[{x:p.x+65,y:p.y,id:1}]);await touch('touchMove',[{...p,id:1}]);await touch('touchEnd',[]);await page.waitForTimeout(350);assert(await count()===0,type+' return cancels');
   await start();await touch('touchStart',[{...p,id:1},{x:p.x+30,y:p.y,id:2}]);await touch('touchEnd',[]);await page.waitForTimeout(350);assert(await count()===0,type+' second finger cancels');
   await start();await touch('touchCancel',[]);await page.waitForTimeout(350);assert(await count()===0,type+' interrupted touch cancels');

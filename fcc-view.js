@@ -25,6 +25,25 @@ function applyInnerGlow(material, center, radius) {
     material.customProgramCacheKey=()=> 'inner-glow-v1';material.needsUpdate=true;
 }
 
+// A translucent volume extends the soft light beyond the sphere without an outline.
+function createOuterGlow(center, radius) {
+    const material=new THREE.ShaderMaterial({
+        uniforms:{glowCenter:{value:center},glowRadius:{value:radius}},
+        vertexShader:`varying vec3 glowWorld;
+            void main(){vec4 world=modelMatrix*vec4(position,1.0);glowWorld=world.xyz;
+            gl_Position=projectionMatrix*viewMatrix*world;}`,
+        fragmentShader:`varying vec3 glowWorld;uniform vec3 glowCenter;uniform float glowRadius;
+            void main(){vec3 direction=normalize(cameraPosition-glowCenter);
+            float d=length(cross(glowWorld-glowCenter,direction))/glowRadius;
+            float alpha=0.22*exp(-2.2*d*d)*(1.0-smoothstep(1.1,1.6,d));
+            gl_FragColor=vec4(1.0,0.9,0.16,alpha);}`,
+        transparent:true,depthWrite:false
+    });
+    const glow=new THREE.Mesh(new THREE.SphereGeometry(radius*1.6,32,24),material);
+    glow.position.copy(center);glow.renderOrder=10;return glow;
+}
+function removeOuterGlow(glow){if(glow){if(glow.parent)glow.parent.remove(glow);glow.geometry.dispose();glow.material.dispose();}}
+
 function describeControl(control,reasonId,needed) {
     if (needed) control.setAttribute('aria-describedby',reasonId);
     else control.removeAttribute('aria-describedby');
@@ -276,11 +295,11 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const hits=ray.intersectObjects(targets,false).filter(hit=>clips.every(p=>p.distanceToPoint(hit.point)>=-1e-6));
         return hits.map(h=>({id:h.object.userData.site.id,distance:h.distance}));
     }
-    let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set(),holdTimer=null,held=null;
+    let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set(),holdTimer=null,held=null,outerGlow=null;
     function endHold(){
         clearTimeout(holdTimer);holdTimer=null;
         if(held){for(const {material}of atomMaterials)if(material.userData.innerGlow)material.userData.innerGlow.value=0;onIonTap(6,held);controls.enabled=true;}
-        held=null;
+        removeOuterGlow(outerGlow);outerGlow=null;held=null;
     }
     function beginHold(){
         if(!down||down.moved||pointers.size!==1)return;
@@ -288,7 +307,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const id=enabled()?(state.atom>0?G.pickAtom(pick(p.x,p.y,'atom'),state.hidden,'hide',null):null):onIonTap(0,p);
         if(!id)return;
         held={id,...p};clearTimeout(tapTimer);taps=0;tapPoint=null;
-        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)applyInnerGlow(material,vec(site.p),G.R*a);}
+        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)applyInnerGlow(material,vec(site.p),G.R*a);const site=G.atoms(atomGrid()).find(s=>s.id===id);outerGlow=createOuterGlow(vec(site.p),G.R*a);scenes.normal.add(outerGlow);}
         else onIonTap(5,held);
         controls.enabled=false;
     }
