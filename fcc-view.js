@@ -256,13 +256,10 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         return hits.map(h=>({id:h.object.userData.site.id,distance:h.distance}));
     }
     let down=null,tapTimer=null,taps=0,tapPoint=null,pointers=new Set(),holdTimer=null,held=null;
-    const halo=document.createElement('div');
-    halo.style.cssText='position:fixed;width:64px;height:64px;border:2px solid #397eaa;border-radius:50%;box-shadow:0 0 16px 8px #8dcced99;pointer-events:none;z-index:3;display:none;transform:translate(-50%,-50%)';
-    halo.setAttribute('aria-hidden','true');document.body.appendChild(halo);
     function endHold(){
         clearTimeout(holdTimer);holdTimer=null;
         if(held){for(const {material}of atomMaterials)material.emissive.setHex(0);onIonTap(6,held);controls.enabled=true;}
-        held=null;halo.style.display='none';
+        held=null;
     }
     function beginHold(){
         if(!down||down.moved||pointers.size!==1)return;
@@ -270,11 +267,9 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const id=enabled()?(state.atom>0?G.pickAtom(pick(p.x,p.y,'atom'),state.hidden,'hide',null):null):onIonTap(0,p);
         if(!id)return;
         held={id,...p};clearTimeout(tapTimer);taps=0;tapPoint=null;
-        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)material.emissive.setHex(0x36586c);}
+        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)material.emissive.setHex(0xffff00);}
         else onIonTap(5,held);
-        halo.style.borderWidth='2px';
         controls.enabled=false;
-        halo.style.left=p.x+'px';halo.style.top=p.y+'px';halo.style.display='block';
     }
     function viewChanged(){recentHide=null;onViewChange();cancelGesture();}
     function cancelGesture() {endHold();clearTimeout(tapTimer);tapTimer=null;down=null;taps=0;tapPoint=null;}
@@ -300,7 +295,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
     });
     window.addEventListener('pointermove',e=>{
         if(!down||e.pointerId!==down.id)return;
-        if(held){halo.style.borderWidth=Math.hypot(e.clientX-held.x,e.clientY-held.y)>=50?'4px':'2px';return;}
+        if(held)return;
         if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>8){clearTimeout(holdTimer);down.moved=true;clearTimeout(tapTimer);taps=0;tapPoint=null;recentHide=null;onViewChange();}
     });
     window.addEventListener('pointerup',e=>{
