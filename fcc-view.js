@@ -26,21 +26,34 @@ function applyInnerGlow(material, center, radius) {
 }
 
 // A translucent volume extends the soft light beyond the sphere without an outline.
-function createOuterGlow(center, radius) {
+function createOuterGlow(center, radius, planes=[]) {
+    const boundaries=Array.from({length:8},(_,i)=>planes[i]?new THREE.Vector4(...planes[i].normal.toArray(),planes[i].constant):new THREE.Vector4(0,0,0,10000));
     const material=new THREE.ShaderMaterial({
-        uniforms:{glowCenter:{value:center},glowRadius:{value:radius}},
+        uniforms:{glowCenter:{value:center},glowRadius:{value:radius},glowPlanes:{value:boundaries},orthographicGlow:{value:false}},
         vertexShader:`varying vec3 glowWorld;
             void main(){vec4 world=modelMatrix*vec4(position,1.0);glowWorld=world.xyz;
             gl_Position=projectionMatrix*viewMatrix*world;}`,
         fragmentShader:`varying vec3 glowWorld;uniform vec3 glowCenter;uniform float glowRadius;
-            void main(){vec3 direction=normalize(cameraPosition-glowCenter);
-            float d=length(cross(glowWorld-glowCenter,direction))/glowRadius;
-            float alpha=0.22*exp(-2.2*d*d)*(1.0-smoothstep(1.1,1.6,d));
-            gl_FragColor=vec4(1.0,0.9,0.16,alpha);}`,
+            uniform vec4 glowPlanes[8];uniform bool orthographicGlow;
+            void main(){
+                vec3 direction=orthographicGlow?-vec3(viewMatrix[0][2],viewMatrix[1][2],viewMatrix[2][2]):normalize(glowWorld-cameraPosition);
+                float light=0.0;
+                // Integrate a softly expanded copy of the visible, clipped solid.
+                // Removed material contributes no light; only a small fringe crosses a cut.
+                for(int i=0;i<24;i++){
+                    vec3 p=glowWorld+direction*(float(i)+0.5)*glowRadius*2.5/24.0;
+                    float distance=length(p-glowCenter)-glowRadius;
+                    for(int j=0;j<8;j++)distance=max(distance,-dot(glowPlanes[j].xyz,p)-glowPlanes[j].w);
+                    float outside=max(distance,0.0)/(glowRadius*0.09);
+                    light+=exp(-outside*outside)*0.012;
+                }
+                gl_FragColor=vec4(1.0,0.91,0.25,min(light,0.15));
+            }`,
         transparent:true,depthWrite:false
     });
-    const glow=new THREE.Mesh(new THREE.SphereGeometry(radius*1.6,32,24),material);
-    glow.position.copy(center);glow.renderOrder=10;return glow;
+    const glow=new THREE.Mesh(new THREE.SphereGeometry(radius*1.25,32,24),material);
+    glow.position.copy(center);glow.renderOrder=10;
+    glow.onBeforeRender=(_renderer,_scene,camera)=>{material.uniforms.orthographicGlow.value=!!camera.isOrthographicCamera;};return glow;
 }
 function removeOuterGlow(glow){if(glow){if(glow.parent)glow.parent.remove(glow);glow.geometry.dispose();glow.material.dispose();}}
 
@@ -307,7 +320,7 @@ function createFCCView({ THREE, renderer, controls, state: shared, getCamera, ca
         const id=enabled()?(state.atom>0?G.pickAtom(pick(p.x,p.y,'atom'),state.hidden,'hide',null):null):onIonTap(0,p);
         if(!id)return;
         held={id,...p};clearTimeout(tapTimer);taps=0;tapPoint=null;
-        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)applyInnerGlow(material,vec(site.p),G.R*a);const site=G.atoms(atomGrid()).find(s=>s.id===id);outerGlow=createOuterGlow(vec(site.p),G.R*a);scenes.normal.add(outerGlow);}
+        if(enabled()){for(const {material,site}of atomMaterials)if(site.id===id)applyInnerGlow(material,vec(site.p),G.R*a);const site=G.atoms(atomGrid()).find(s=>s.id===id);outerGlow=createOuterGlow(vec(site.p),G.R*a,atomMaterials.find(e=>e.site.id===id).material.clippingPlanes);scenes.normal.add(outerGlow);}
         else onIonTap(5,held);
         controls.enabled=false;
     }
